@@ -450,6 +450,7 @@ class AreaSeries extends LineSeries {
         }
 
         areaPath = topPath.concat(bottomPath);
+        areaPath.push(['Z']);
         // TODO: don't set leftCliff and rightCliff when connectNulls?
         graphPath = getGraphPath
             .call(this, graphPoints, false, connectNulls);
@@ -479,7 +480,7 @@ class AreaSeries extends LineSeries {
             yAxisSeries = yAxis.series,
             seriesLength = yAxisSeries.length,
             visibleSeries: (Array<boolean>|undefined),
-            upOrDown = pick(yAxis.options.reversedStacks, true) ? 1 : -1,
+            upOrDown = yAxis.options.reversedStacks ? 1 : -1,
             i: number;
 
 

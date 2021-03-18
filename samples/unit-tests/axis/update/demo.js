@@ -129,24 +129,24 @@ QUnit.test('General yAxis updates', function (assert) {
         'Last index should be less than yAxis array length (#8075) - part II'
     );
 
-    chart.yAxis[2].remove();
+    chart.update({
+        series: [{
+            yAxis: 0
+        }, {
+            yAxis: 1
+        }],
+        yAxis: [{}, {}]
+    }, true, true);
+
     assert.strictEqual(
-        chart.options.yAxis.length,
-        1,
-        '#11930: Both the dynamically added axes should be removed from chart.options'
+        chart.yAxis.length,
+        3,
+        '#9671: There should be 3 axes'
     );
-});
-
-QUnit.test('Updates after new Axis', function (assert) {
-    var chart = new Highcharts.stockChart('container', {});
-
-    chart.addAxis({});
-    chart.yAxis[2].update({});
-
     assert.strictEqual(
-        chart.options.yAxis.length,
-        2,
-        'Only two entries in options.yAxis: default + new one (#6423)'
+        chart.series[1].yAxis,
+        chart.yAxis[2],
+        '#9671: The second series should be bound to the second axis'
     );
 });
 
@@ -170,7 +170,7 @@ QUnit.test('Update axis names (#3830)', function (assert) {
 
     assert.strictEqual(
         chart.xAxis[0].labelRotation,
-        undefined,
+        0,
         'Axis labels should not be rotated'
     );
 

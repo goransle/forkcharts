@@ -488,8 +488,7 @@ class HeatmapSeries extends ScatterSeries {
 
         // Bind new symbol names
         extend(symbols, {
-            ellipse: symbols.circle,
-            rect: symbols.square
+            ellipse: symbols.circle
         });
     }
 
@@ -526,18 +525,20 @@ class HeatmapSeries extends ScatterSeries {
                 dimension
             ): void {
                 // Set new width and height basing on state options.
-                attribs[dimension[0]] = (
+                (attribs as any)[dimension[0]] = (
                     (pointStateOptions as any)[dimension[0]] ||
                     (seriesStateOptions as any)[dimension[0]] ||
-                    shapeArgs[dimension[0]]
+                    (shapeArgs as any)[dimension[0]]
                 ) + (
                     (pointStateOptions as any)[dimension[0] + 'Plus'] ||
                     (seriesStateOptions as any)[dimension[0] + 'Plus'] || 0
                 );
 
                 // Align marker by a new size.
-                attribs[dimension[1]] = shapeArgs[dimension[1]] +
-                    (shapeArgs[dimension[0]] - attribs[dimension[0]]) / 2;
+                (attribs as any)[dimension[1]] =
+                    (shapeArgs as any)[dimension[1]] +
+                    ((shapeArgs as any)[dimension[0]] -
+                    (attribs as any)[dimension[0]]) / 2;
             });
         }
 
@@ -729,17 +730,9 @@ extend(HeatmapSeries.prototype, {
      */
     drawLegendSymbol: LegendSymbolMixin.drawRectangle,
 
-    /**
-     * @ignore
-     * @deprecated
-     */
-    getBox: noop as any,
-
     getExtremesFromAll: true,
 
     getSymbol: Series.prototype.getSymbol,
-
-    hasPointSpecificOptions: true,
 
     parallelArrays: colorMapSeriesMixin.parallelArrays,
 

@@ -34,6 +34,7 @@ const {
     format,
     isArray,
     isNumber,
+    objectEach,
     pick
 } = U;
 
@@ -110,11 +111,14 @@ declare global {
             total: number;
             x: number;
         }
+        interface XAxisOptions {
+            stackLabels?: YAxisStackLabelsOptions;
+        }
         interface YAxisOptions {
             stackLabels?: YAxisStackLabelsOptions;
         }
         interface YAxisStackLabelsOptions {
-            animation?: (boolean|Partial<AnimationOptions>);
+            animation?: (false|Partial<AnimationOptions>);
             align?: AlignValue;
             allowOverlap?: boolean;
             backgroundColor?: ColorType;
@@ -583,7 +587,7 @@ Chart.prototype.getStacks = function (this: Chart): void {
             series.options.stacking &&
             (
                 series.visible === true ||
-                (chart.options.chart as any).ignoreHiddenSeries === false
+                chart.options.chart.ignoreHiddenSeries === false
             )
         ) {
             series.stackKey = [
@@ -614,6 +618,9 @@ StackingAxis.compose(Axis);
  * @return {void}
  */
 Series.prototype.setGroupedPoints = function (): void {
+
+    const stacking = this.yAxis.stacking;
+
     if (
         this.options.centerInCategory &&
         (this.is('column') || this.is('columnrange')) &&
@@ -624,6 +631,16 @@ Series.prototype.setGroupedPoints = function (): void {
         this.chart.series.length > 1
     ) {
         Series.prototype.setStackedPoints.call(this, 'group');
+
+    // After updating, if we now have proper stacks, we must delete the group
+    // pseudo stacks (#14986)
+    } else if (stacking) {
+        objectEach(stacking.stacks, (type, key): void => {
+            if (key.slice(-5) === 'group') {
+                objectEach(type, (stack): void => stack.destroy());
+                delete stacking.stacks[key];
+            }
+        });
     }
 };
 
@@ -637,10 +654,10 @@ Series.prototype.setStackedPoints = function (stackingParam?: string): void {
 
     const stacking = stackingParam || this.options.stacking;
 
-    if (!stacking ||
-        (this.visible !== true &&
-        (this.chart.options.chart as any).ignoreHiddenSeries !== false)
-    ) {
+    if (!stacking || (
+        this.visible !== true &&
+        this.chart.options.chart.ignoreHiddenSeries !== false
+    )) {
         return;
     }
 
