@@ -1,4 +1,12 @@
-Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/us-population-density.json', function (data) {
+(async () => {
+
+    const topology = await fetch(
+        'https://code.highcharts.com/mapdata/countries/us/us-all.topo.json'
+    ).then(response => response.json());
+
+    const data = await fetch(
+        'https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/us-population-density.json'
+    ).then(response => response.json());
 
     // Make it joinable
     data.forEach(function (p) {
@@ -39,7 +47,7 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
 
         series: [{
             data: data,
-            mapData: Highcharts.maps['countries/us/us-all'],
+            mapData: topology,
             joinBy: 'hasc',
             dataLabels: {
                 enabled: true,
@@ -58,4 +66,4 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
             }
         }]
     });
-});
+})();

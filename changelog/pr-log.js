@@ -1,10 +1,13 @@
 /* eslint-env node, es6 */
 /* eslint camelcase: 0, func-style: 0, valid-jsdoc: 0, no-console: 0, require-jsdoc: 0 */
 
+const fs = require('fs').promises; // eslint-disable-line
 const { Octokit } = require('@octokit/rest');
 const octokit = new Octokit({
     auth: process.env.GITHUB_LIST_PRS_TOKEN
 });
+const os = require('os');
+const path = require('path');
 
 require('colors');
 
@@ -16,25 +19,39 @@ const log = {
     Highcharts: {},
     'Highcharts Stock': {},
     'Highcharts Maps': {},
-    'Highcharts Gantt': {}
+    'Highcharts Gantt': {},
+    'Highcharts Dashboards': {}
 };
 
 // Whenever the string 'Upgrade note' appears, the next paragraph is interpreted
-// as the not
-const parseUpgradeNote = p => {
-    const paragraphs = p.body.split('\n');
-    for (let i = 0; i < paragraphs.length; i++) {
-        if (/upgrade note/i.test(paragraphs[i])) {
-            return (paragraphs[i + 1] ? paragraphs[i + 1].trim() : void 0);
+// as the note
+const parseUpgradeNotes = p => {
+    const upgradeNotes = [],
+        paragraphs = p.body.split('\n');
+
+    let look = false,
+        listItemsOnly = false;
+    for (const para of paragraphs) {
+        if (look) {
+            if (para.charAt(0) === '*') {
+                upgradeNotes.push(para.replace(/^\* /, '').trim());
+                listItemsOnly = true;
+            } else if (!listItemsOnly) {
+                upgradeNotes.push(para.trim());
+                look = false;
+            }
+        }
+        if (/upgrade note/i.test(para)) {
+            look = true;
         }
     }
-    return void 0;
+    return upgradeNotes;
 };
 
-module.exports = async since => {
-
-    const included = [];
-
+const loadPulls = async (
+    since,
+    branches = 'master'
+) => {
     let page = 1;
     let pulls = [];
 
@@ -55,12 +72,10 @@ module.exports = async since => {
     );
     const after = Date.parse(commit.headers['last-modified']);
 
+    const branchesArr = branches.split(',');
     while (page < 20) {
-        const baseBranches = [
-            'master'
-        ];
         const pageData = [];
-        for (const base of baseBranches) {
+        for (const base of branchesArr) {
 
             let { data } = await octokit.pulls.list({
                 owner: 'highcharts',
@@ -94,14 +109,32 @@ module.exports = async since => {
         pulls = pulls.concat(pageData);
         page++;
     }
+    return pulls;
+};
+
+module.exports = async (since, fromCache, branches) => {
+
+    const included = [],
+        tmpFileName = path.join(os.tmpdir(), 'pulls.json');
+
+    let pulls;
+    if (fromCache) {
+        pulls = await fs.readFile(tmpFileName);
+        pulls = JSON.parse(pulls);
+    } else {
+        pulls = await loadPulls(since, branches);
+        await fs.writeFile(tmpFileName, JSON.stringify(pulls));
+    }
 
     // Simplify
-    pulls = pulls.map(p => ({
-        description: p.body.split('\n')[0].trim(),
-        upgradeNote: parseUpgradeNote(p),
-        labels: p.labels,
-        number: p.number
-    }));
+    pulls = pulls
+        .filter(p => Boolean(p.body))
+        .map(p => ({
+            description: p.body.split('\n')[0].trim(),
+            upgradeNotes: parseUpgradeNotes(p),
+            labels: p.labels,
+            number: p.number
+        }));
 
     pulls.forEach(p => {
         p.product = 'Highcharts';

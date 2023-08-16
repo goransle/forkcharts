@@ -13,11 +13,13 @@ Highcharts.chart('container', {
     },
 
     title: {
-        text: 'Wind rose for South Shore Met Station, Oregon'
+        text: 'Wind rose for South Shore Met Station, Oregon',
+        align: 'left'
     },
 
     subtitle: {
-        text: 'Source: or.water.usgs.gov'
+        text: 'Source: or.water.usgs.gov',
+        align: 'left'
     },
 
     pane: {
@@ -43,9 +45,7 @@ Highcharts.chart('container', {
             text: 'Frequency (%)'
         },
         labels: {
-            formatter: function () {
-                return this.value + '%';
-            }
+            format: '{value}%'
         },
         reversedStacks: false
     },

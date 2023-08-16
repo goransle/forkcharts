@@ -14,6 +14,7 @@
  *
  * */
 
+import type BBoxObject from '../../Core/Renderer/BBoxObject';
 import type LinePointOptions from './LinePointOptions';
 import type LineSeries from './LineSeries';
 import type Point from '../../Core/Series/Point';
@@ -26,26 +27,19 @@ import type { SeriesZonesOptions } from '../../Core/Series/SeriesOptions';
  *
  * */
 
-declare class LinePoint extends Point {
-    options: LinePointOptions;
-    series: LineSeries;
-}
-
 declare module '../../Core/Series/PointLike' {
     interface PointLike {
-        category?: string;
+        category?: (number|string);
         clientX?: number;
-        dataGroup?: Highcharts.DataGroupingInfoObject;
         dist?: number;
         distX?: number;
         hasImage?: boolean;
-        index?: number;
+        index: number;
         isInside?: boolean;
         low?: number;
         negative?: boolean;
         options: PointOptions;
-        plotX?: number;
-        plotY?: number;
+        stackBox?: BBoxObject;
         stackTotal?: number;
         stackY?: (number|null);
         yBottom?: number;
@@ -53,9 +47,14 @@ declare module '../../Core/Series/PointLike' {
     }
 }
 
+declare class LinePoint extends Point {
+    options: LinePointOptions;
+    series: LineSeries;
+}
+
 /* *
  *
- *  Export
+ *  Default Export
  *
  * */
 

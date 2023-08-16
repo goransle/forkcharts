@@ -3,6 +3,7 @@ QUnit.test('Overlapping dataLabels should be hidden', function (assert) {
             plotOptions: {
                 series: {
                     dataLabels: {
+                        crop: false,
                         enabled: true,
                         rotation: 270
                     }
@@ -59,6 +60,33 @@ QUnit.test('Overlapping dataLabels should be hidden', function (assert) {
                 'hidden',
         '#13449: dataLabel should be visible after updating allowOverlap'
     );
+
+    chart.update({
+        chart: {
+            type: 'column'
+        },
+        plotOptions: {
+            column: {
+                grouping: false,
+                dataLabels: {
+                    useHTML: true,
+                    allowOverlap: false,
+                    rotation: 0
+                }
+            }
+        },
+        series: [{
+            data: [2]
+        }, {
+            data: [1.999]
+        }]
+    });
+
+    assert.strictEqual(
+        chart.series[1].points[0].dataLabel.div.style['pointer-events'],
+        'none',
+        'Pointer events for overlapped labels should be disabled (#18821)'
+    );
 });
 
 QUnit.test(
@@ -100,7 +128,7 @@ QUnit.test(
             ]
         });
 
-        chart.legend.allItems[1].legendGroup.element.onclick();
+        Highcharts.fireEvent(chart.legend.allItems[1].legendItem.group.element, 'click');
         chart.xAxis[0].setExtremes(0.5);
 
         assert.strictEqual(

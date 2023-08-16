@@ -23,11 +23,13 @@
 import type BBoxObject from '../../Core/Renderer/BBoxObject';
 import type DataLabelOptions from '../../Core/Series/DataLabelOptions';
 import type Funnel3DSeriesOptions from './Funnel3DSeriesOptions';
-import type SVGElement from '../../Core/Renderer/SVG/SVGElement';
+import type SVGLabel from '../../Core/Renderer/SVG/SVGLabel';
+
+import Funnel3DComposition from './Funnel3DComposition.js';
 import Funnel3DPoint from './Funnel3DPoint.js';
 import H from '../../Core/Globals.js';
 const { noop } = H;
-import Math3D from '../../Extensions/Math3D.js';
+import Math3D from '../../Core/Math3D.js';
 const { perspective } = Math3D;
 import SeriesRegistry from '../../Core/Series/SeriesRegistry.js';
 const {
@@ -43,7 +45,6 @@ const {
     pick,
     relativeLength
 } = U;
-import './Funnel3DComposition.js';
 
 /* *
  *
@@ -54,13 +55,22 @@ import './Funnel3DComposition.js';
 /**
  * The funnel3d series type.
  *
- * @constructor seriesTypes.funnel3d
+ * @class
+ * @name Highcharts.seriesTypes.funnel3d
  * @augments seriesTypes.column
  * @requires highcharts-3d
  * @requires modules/cylinder
  * @requires modules/funnel3d
  */
 class Funnel3DSeries extends ColumnSeries {
+
+    /* *
+     *
+     *  Static Properties
+     *
+     * */
+
+    public static compose = Funnel3DComposition.compose;
 
     /**
      * A funnel3d is a 3d version of funnel series type. Funnel charts are
@@ -187,10 +197,10 @@ class Funnel3DSeries extends ColumnSeries {
      */
     public alignDataLabel(
         point: Funnel3DPoint,
-        _dataLabel: SVGElement,
+        _dataLabel: SVGLabel,
         options: DataLabelOptions
     ): void {
-        var series = this,
+        const series = this,
             dlBoxRaw = point.dlBoxRaw,
             inverted = series.chart.inverted,
             below = (point.plotY as any) > pick(
@@ -274,7 +284,7 @@ class Funnel3DSeries extends ColumnSeries {
     public translate(): void {
         Series.prototype.translate.apply(this, arguments);
 
-        var sum = 0,
+        let sum = 0,
             series = this,
             chart = series.chart,
             options = series.options,
@@ -309,7 +319,7 @@ class Funnel3DSeries extends ColumnSeries {
 
         // Return the width at a specific y coordinate
         series.getWidthAt = getWidthAt = function (y: number): number {
-            var top = (centerY - height / 2);
+            const top = (centerY - height / 2);
 
             return (y > neckY || height === neckHeight) ?
                 neckWidth :
@@ -451,7 +461,7 @@ class Funnel3DSeries extends ColumnSeries {
 
 /* *
  *
- *  Prototype Properties
+ *  Class Prototype
  *
  * */
 
@@ -500,7 +510,7 @@ export default Funnel3DSeries;
  *         Funnel3d demo
  *
  * @since     7.1.0
- * @extends   series.funnel,plotOptions.funnel3d
+ * @extends   series,plotOptions.funnel3d
  * @excluding allAreas,boostThreshold,colorAxis,compare,compareBase
  * @product   highcharts
  * @requires  highcharts-3d

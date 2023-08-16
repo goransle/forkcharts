@@ -11,20 +11,19 @@
  *  Imports
  *
  * */
-import ColorType from '../../../Core/Color/ColorType';
-import CSSObject from '../../../Core/Renderer/CSSObject';
-import { PointMarkerOptions } from '../../../Core/Series/PointOptions';
-import type { SMAParamsOptions, SMAOptions } from '../SMA/SMAOptions';
-import IKHIndicator from './IKHIndicator';
+import type ColorType from '../../../Core/Color/ColorType';
+import type CSSObject from '../../../Core/Renderer/CSSObject';
+import type IKHIndicator from './IKHIndicator';
 import type IKHPoint from './IKHPoint';
+import type { PointMarkerOptions } from '../../../Core/Series/PointOptions';
+import type { SMAParamsOptions, SMAOptions } from '../SMA/SMAOptions';
+import type SVGElement from '../../../Core/Renderer/SVG/SVGElement';
 
 /* *
-*
-* Declarations
-*
-* */
-
-/* eslint-disable @typescript-eslint/interface-name-prefix */
+ *
+ * Declarations
+ *
+ * */
 
 export interface IKHDrawSenkouSpanObject {
     indicator: IKHIndicator;
@@ -33,7 +32,7 @@ export interface IKHDrawSenkouSpanObject {
     color?: ColorType;
     options: IKHOptions;
     gap: IKHGapExtensionObject;
-    graph: Highcharts.SVGElement | undefined;
+    graph: (SVGElement|undefined);
 }
 
 export interface IKHSenkouSpanOptions {
@@ -50,7 +49,6 @@ export interface IKHGapSizeOptions {
     gapSize?: IKHOptions['gapSize'];
 }
 
-
 export interface IKHParamsOptions extends SMAParamsOptions {
     periodTenkan?: number;
     periodSenkouSpanB?: number;
@@ -66,6 +64,4 @@ export interface IKHOptions extends SMAOptions {
     senkouSpanA?: Record<string, CSSObject>;
     senkouSpanB?: Record<string, CSSObject>;
     tenkanLine?: Record<string, CSSObject>;
-    tooltip?: Highcharts.TooltipOptions;
 }
-/* eslint-enable @typescript-eslint/interface-name-prefix */

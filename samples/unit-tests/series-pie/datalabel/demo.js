@@ -7,6 +7,11 @@ QUnit.test('Pie data labels general tests', function (assert) {
                 {
                     animation: false,
                     type: 'pie',
+                    states: {
+                        inactive: {
+                            opacity: 0
+                        }
+                    },
                     data: [
                         {
                             name: 'Firefox',
@@ -49,6 +54,14 @@ QUnit.test('Pie data labels general tests', function (assert) {
         point.dataLabel.translateY - dataLabelOldY,
         offsetY,
         'A point dataLabel y option should be used in calculations (#12985).'
+    );
+
+    chart.series[0].points[0].onMouseOver();
+
+    assert.strictEqual(
+        chart.series[0].points[1].dataLabel.opacity,
+        0,
+        '#15377: Inactive point should have 0 opacity'
     );
 });
 
@@ -250,7 +263,7 @@ QUnit.test('Null points should not have data labels(#4641)', function (assert) {
                     data: [
                         {
                             name: 'Microsoft Internet Explorer',
-                            //y: 56.33,
+                            // y: 56.33,
                             y: null
                         },
                         {
@@ -409,7 +422,7 @@ QUnit.test('Pie labels outside plot (#3163)', function (assert) {
         labelYPos = [];
 
     for (var i = 0; i < seriesData.length; i++) {
-        labelYPos.push(seriesData[i].labelPosition.final.y);
+        labelYPos.push(seriesData[i].labelPosition.computed.y);
     }
 
     function isLabelInsidePlot() {
@@ -451,7 +464,7 @@ QUnit.test(
                         data: [
                             ['Firefox', 44.2],
                             ['IE7', 26.6],
-                            ['IE6', 20],
+                            { name: 'IE6', y: 20, visible: false },
                             ['Chrome', 3.1],
                             ['Other', 5.4]
                         ]
@@ -459,14 +472,18 @@ QUnit.test(
                 ]
             }),
             points = chart.series[0].points,
-            offset = Highcharts.offset(chart.container),
-            event = $.Event('mouseover', {
-                which: 1,
-                pageX: offset.left + points[0].labelPosition.natural.x,
-                pageY: offset.top + points[0].labelPosition.natural.y
-            });
+            offset = Highcharts.offset(chart.container);
 
-        $(points[0].dataLabel.div).trigger(event);
+        assert.ok(
+            true,
+            '#15909: Hidden point with useHTML dataLabels should not throw'
+        );
+
+        Highcharts.fireEvent(points[0].dataLabel.div, 'mouseover', {
+            which: 1,
+            pageX: offset.left + points[0].labelPosition.natural.x,
+            pageY: offset.top + points[0].labelPosition.natural.y
+        });
 
         assert.strictEqual(
             points[0] === chart.hoverPoint,
@@ -474,13 +491,11 @@ QUnit.test(
             'First point hovered.'
         );
 
-        event = $.Event('mouseover', {
+        Highcharts.fireEvent(points[4].dataLabel.div, 'mouseover', {
             which: 1,
             pageX: offset.left + points[4].labelPosition.natural.x,
             pageY: offset.top + points[4].labelPosition.natural.y
         });
-
-        $(points[4].dataLabel.div).trigger(event);
 
         assert.strictEqual(
             points[4] === chart.hoverPoint,
@@ -602,7 +617,7 @@ QUnit.test('Connector color of individual point (#8864).', function (assert) {
     });
 
     assert.ok(
-        chart.series[0].points[0].connector.stroke === '#bada55',
+        chart.series[0].points[0].connector.attr('stroke') === '#bada55',
         'Color applied to indiviudal connector.'
     );
 });

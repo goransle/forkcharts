@@ -1,11 +1,19 @@
-Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/world-population-density.json', function (data) {
+(async () => {
+
+    const topology = await fetch(
+        'https://code.highcharts.com/mapdata/custom/world-highres.topo.json'
+    ).then(response => response.json());
+
+    const data = await fetch(
+        'https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/world-population-density.json'
+    ).then(response => response.json());
 
     // Assign id's
     data.forEach(function (p) {
         p.id = p.code;
     });
 
-    // Initiate the chart
+    // Initialize the chart
     var chart = Highcharts.mapChart('container', {
 
         title: {
@@ -37,7 +45,7 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
 
         series: [{
             data: data,
-            mapData: Highcharts.maps['custom/world-highres'],
+            mapData: topology,
             joinBy: ['iso-a2', 'code'],
             name: 'Population density',
             allowPointSelect: true,
@@ -45,11 +53,6 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
             events: {
                 click: function (e) {
                     e.point.zoomTo();
-                }
-            },
-            states: {
-                hover: {
-                    color: '#a4edba'
                 }
             },
             tooltip: {
@@ -69,4 +72,5 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
     document.getElementById('zoom-out').addEventListener('click', function () {
         chart.mapZoom();
     });
-});
+
+})();

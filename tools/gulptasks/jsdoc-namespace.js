@@ -20,8 +20,8 @@ const TSCONFIG_FILE = path.join(LINT_DIRECTORY, 'tsconfig.json');
 const TARGET_DIRECTORIES = [
     'gantt',
     'highcharts',
-    'highstock',
-    'highmaps'
+    'highmaps',
+    'highstock'
 ].map(
     directoryName => path.join('build', 'api', directoryName)
 );
@@ -66,8 +66,9 @@ function jsDocNamespace() {
             jsdoc3Options = {
                 plugins: [
                     path.posix.join(
-                        'node_modules', 'highcharts-documentation-generators',
-                        'jsdoc', 'plugins', 'highcharts.namespace'
+                        'node_modules', '@highcharts',
+                        'highcharts-documentation-generators', 'jsdoc',
+                        'plugins', 'highcharts.namespace'
                     )
                 ]
             };

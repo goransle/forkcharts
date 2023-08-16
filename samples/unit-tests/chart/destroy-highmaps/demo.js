@@ -53,7 +53,7 @@ QUnit.test('Destroy map', function (assert) {
         }
     ];
 
-    // Initiate the chart
+    // Initialize the chart
     var chart = Highcharts.mapChart('container', {
         title: {
             text: 'Destroy chart from button'
@@ -78,11 +78,6 @@ QUnit.test('Destroy map', function (assert) {
                 mapData: Highcharts.maps['custom/world'],
                 joinBy: ['iso-a2', 'code'],
                 name: 'Population density',
-                states: {
-                    hover: {
-                        color: '#a4edba'
-                    }
-                },
                 tooltip: {
                     valueSuffix: '/km²'
                 }

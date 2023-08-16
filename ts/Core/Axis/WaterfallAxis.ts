@@ -8,29 +8,39 @@
  *
  * */
 
+'use strict';
+
 /* *
  *
  *  Imports
  *
  * */
 
-import type Axis from './Axis.js';
+import type Axis from './Axis';
 import type Chart from '../Chart/Chart.js';
-import type SVGElement from '../Renderer/SVG/SVGElement';
-import StackItem from '../../Extensions/Stacking.js';
+import type StackingAxis from './Stacking/StackingAxis';
+import type SVGLabel from '../Renderer/SVG/SVGLabel';
+
+import StackItem from './Stacking/StackItem.js';
 import U from '../Utilities.js';
 const {
     addEvent,
     objectEach
 } = U;
 
-/**
- * @private
- */
-declare module '../../Core/Axis/Types' {
+/* *
+ *
+ *  Declarations
+ *
+ * */
+
+declare module './AxisComposition' {
     interface AxisComposition {
         waterfall?: WaterfallAxis['waterfall'];
     }
+}
+
+declare module '../../Core/Axis/AxisType' {
     interface AxisTypeRegistry {
         WaterfallAxis: WaterfallAxis;
     }
@@ -39,7 +49,7 @@ declare module '../../Core/Axis/Types' {
 /**
  * @private
  */
-interface WaterfallAxis extends Axis {
+interface WaterfallAxis extends StackingAxis {
     waterfall: WaterfallAxis.Composition;
 }
 
@@ -61,10 +71,13 @@ namespace WaterfallAxis {
     }
 
     export interface StacksItemObject {
-        label?: SVGElement;
+        absoluteNeg?: number;
+        absolutePos?: number;
+        connectorThreshold?: number;
+        label?: SVGLabel;
         negTotal: number;
         posTotal: number;
-        stackState: Array<string>;
+        stackState: Array<number>;
         stackTotal: number;
         stateIndex: number;
         threshold: number;
@@ -123,12 +136,14 @@ namespace WaterfallAxis {
          * @function Highcharts.Axis#renderWaterfallStackTotals
          */
         public renderStackTotals(): void {
-            var yAxis = this.axis,
+            const yAxis = this.axis,
                 waterfallStacks = yAxis.waterfall.stacks,
-                stackTotalGroup = yAxis.stacking && yAxis.stacking.stackTotalGroup,
+                stackTotalGroup = (
+                    yAxis.stacking && yAxis.stacking.stackTotalGroup
+                ),
                 dummyStackItem = new StackItem(
-                    yAxis as any,
-                    yAxis.options.stackLabels as any,
+                    yAxis,
+                    yAxis.options.stackLabels || {},
                     false,
                     0,
                     void 0
@@ -137,24 +152,27 @@ namespace WaterfallAxis {
             this.dummyStackItem = dummyStackItem;
 
             // Render each waterfall stack total
-            objectEach(waterfallStacks, function (type): void {
-                objectEach(type, function (
-                    stackItem: StacksItemObject
-                ): void {
-                    dummyStackItem.total = stackItem.stackTotal;
+            if (stackTotalGroup) {
+                objectEach(waterfallStacks, function (type): void {
+                    objectEach(type, function (
+                        stackItem: StacksItemObject,
+                        key: string
+                    ): void {
+                        dummyStackItem.total = stackItem.stackTotal;
+                        dummyStackItem.x = +key;
+                        if (stackItem.label) {
+                            dummyStackItem.label = stackItem.label;
+                        }
 
-                    if (stackItem.label) {
-                        dummyStackItem.label = stackItem.label;
-                    }
-
-                    StackItem.prototype.render.call(
-                        dummyStackItem,
-                        stackTotalGroup as any
-                    );
-                    stackItem.label = dummyStackItem.label;
-                    delete dummyStackItem.label;
+                        StackItem.prototype.render.call(
+                            dummyStackItem,
+                            stackTotalGroup
+                        );
+                        stackItem.label = dummyStackItem.label;
+                        delete dummyStackItem.label;
+                    });
                 });
-            });
+            }
             dummyStackItem.total = null;
         }
 
@@ -170,7 +188,10 @@ namespace WaterfallAxis {
     /**
      * @private
      */
-    export function compose(AxisClass: typeof Axis, ChartClass: typeof Chart): void {
+    export function compose(
+        AxisClass: typeof Axis,
+        ChartClass: typeof Chart
+    ): void {
 
         addEvent(AxisClass, 'init', onInit);
         addEvent(AxisClass, 'afterBuildStacks', onAfterBuildStacks);
@@ -209,7 +230,7 @@ namespace WaterfallAxis {
      * @private
      */
     function onBeforeRedraw(this: Chart): void {
-        var axes = this.axes as Array<WaterfallAxis>,
+        let axes = this.axes as Array<WaterfallAxis>,
             series = this.series,
             i = series.length;
 

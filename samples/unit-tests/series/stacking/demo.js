@@ -150,12 +150,10 @@ QUnit.test('Date objects as X values, column', function (assert) {
         ]
     });
 
-    assert.ok(
-        parseInt(
-            chart.series[0].points[0].graphic.element.getAttribute('width'),
-            10
-        ) > 10,
-        'Column created'
+    assert.greaterThan(
+        chart.series[0].points[0].graphic.width,
+        10,
+        'Column should be created'
     );
 });
 
@@ -381,7 +379,7 @@ QUnit.test('Date objects as X values, column', function (assert) {
         function changeStackingType() {
             var oldTranslateX, oldTranslateY, newTranslateX, newTranslateY;
 
-            Highcharts.each(chart.series, function (series) {
+            chart.series.forEach(series => {
                 oldTranslateX = series.data[0].dataLabel.translateX;
                 oldTranslateY = series.data[0].dataLabel.translateY;
 
@@ -699,4 +697,44 @@ QUnit.test('Date objects as X values, column', function (assert) {
             'Series 3 - Point should start from value=1 (#4024)'
         );
     });
+
+    QUnit.test(
+        'The centerInCategory, reversedStacks order of stacks, #16169.',
+        function (assert) {
+            const chart = Highcharts.chart('container', {
+                    chart: {
+                        type: 'column'
+                    },
+                    plotOptions: {
+                        column: {
+                            stacking: 'normal',
+                            centerInCategory: true
+                        }
+                    },
+                    yAxis: {
+                        reversedStacks: false,
+                        stackLabels: {
+                            enabled: true
+                        }
+                    },
+                    series: [{
+                        data: [5]
+                    }, {
+                        data: [2]
+                    }, {
+                        data: [4],
+                        stack: '1'
+                    }, {
+                        data: [1],
+                        stack: '1'
+                    }]
+                }),
+                series = chart.series;
+
+            assert.ok(
+                series[0].points[0].barX < series[2].points[0].barX,
+                `Enabling centerInCategory and setting reversedStacks to false
+                should not affect the stack order.`
+            );
+        });
 }());

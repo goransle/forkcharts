@@ -1,4 +1,9 @@
-Highcharts.getJSON('https://demo-live-data.highcharts.com/aapl-ohlc.json', function (data) {
+(async () => {
+
+    // Load the dataset
+    const data = await fetch(
+        'https://demo-live-data.highcharts.com/aapl-ohlc.json'
+    ).then(response => response.json());
 
     Highcharts.stockChart('container', {
 
@@ -13,6 +18,12 @@ Highcharts.getJSON('https://demo-live-data.highcharts.com/aapl-ohlc.json', funct
         legend: {
             enabled: true
         },
+        yAxis: [{
+            height: '70%'
+        }, {
+            height: '30%',
+            top: '70%'
+        }],
 
         plotOptions: {
             series: {
@@ -25,10 +36,12 @@ Highcharts.getJSON('https://demo-live-data.highcharts.com/aapl-ohlc.json', funct
             useOhlcData: true,
             id: 'aapl',
             name: 'AAPL Stock Price',
+            yAxis: 0,
             data: data
         }, {
             type: 'atr',
+            yAxis: 1,
             linkedTo: 'aapl'
         }]
     });
-});
+})();

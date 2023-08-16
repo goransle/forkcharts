@@ -12,6 +12,12 @@ QUnit.test(
                         height: 80
                     }
                 ],
+                tooltip: {
+                    split: true,
+                    formatter() {
+                        return 'abc';
+                    }
+                },
                 series: [
                     {
                         data: [1, 2, 3],
@@ -84,14 +90,41 @@ QUnit.test(
                 true,
                 'Flag clipped (#8546).'
             );
+
+            controller.mouseMove(
+                chart.series[0].points[0].plotX + yAxis0.left,
+                chart.series[0].points[0].plotY + yAxis0.top - 25
+            );
+
+            controller.mouseOver(
+                flag0.plotX + yAxis0.left + 4,
+                flag0.plotY + yAxis0.top - 25
+            );
+
+            controller.moveTo(0, 0);
+            controller.mouseMove(
+                chart.series[0].points[0].plotX + yAxis0.left,
+                chart.series[0].points[0].plotY + yAxis0.top - 25
+            );
+
+            assert.notEqual(
+                chart.tooltip.label.element.getBBox().width,
+                0,
+                'Tooltip should show up (#17565).'
+            );
+
+            assert.notEqual(
+                chart.tooltip.label.element.getBBox().height,
+                0,
+                'Tooltip should show up (#17565).'
+            );
         }
         // Empty shared tooltip visible, when text is not defined in flag point, #6332
         chart.tooltip.update({ split: true });
 
         chart.tooltip.refresh(chart.series[2].points[0]);
-        assert.strictEqual(
-            chart.tooltip.label.element.childNodes.length,
-            1,
-            'The tooltip box next to the flag with empty title should not be created(#6332).'
+        assert.ok(
+            chart.tooltip.label.hasClass('highcharts-label'),
+            'The flags tooltip should not be split'
         );
     });

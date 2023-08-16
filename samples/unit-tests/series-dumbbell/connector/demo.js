@@ -42,7 +42,7 @@ QUnit.test('Dumbbell connectors', function (assert) {
     assert.strictEqual(
         chart.series[0].points[3].connector.element.getAttribute('stroke'),
         'green',
-        "Added point's connector should have correct color."
+        'Added point\'s connector should have correct color.'
     );
 
     assert.strictEqual(
@@ -50,7 +50,7 @@ QUnit.test('Dumbbell connectors', function (assert) {
             'stroke-width'
         ),
         '3',
-        "Added point's connector should have correct width."
+        'Added point\'s connector should have correct width.'
     );
 
     chart.addSeries({
@@ -61,19 +61,31 @@ QUnit.test('Dumbbell connectors', function (assert) {
         connectorColor: 'blue'
     });
 
-    var point = chart.series[1].points[1],
-        lowerGraphic = point.lowerGraphic,
-        upperGraphic = point.upperGraphic,
-        connector = point.connector,
-        pointGraphics = [lowerGraphic, upperGraphic, connector];
+    const assertDestruction = msg => {
+        var point = chart.series[1].points[0],
+            lowerGraphic = point.lowerGraphic,
+            upperGraphic = point.upperGraphic,
+            connector = point.connector,
+            pointGraphics = [lowerGraphic, upperGraphic, connector];
 
-    point.remove();
+        point.remove();
 
-    pointGraphics.forEach(function (graphic) {
-        assert.strictEqual(
-            graphic.element,
-            undefined,
-            "All point's graphics should be removed."
-        );
+        pointGraphics.forEach(function (graphic) {
+            assert.strictEqual(
+                graphic && graphic.element,
+                undefined,
+                msg
+            );
+        });
+    };
+
+    assertDestruction('All point\'s graphics should be removed.');
+
+    chart.series[1].update({
+        marker: {
+            enabled: false
+        }
     });
+
+    assertDestruction('#15560: All point graphics should be destroyed when markers are disabled');
 });

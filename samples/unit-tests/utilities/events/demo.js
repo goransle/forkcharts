@@ -487,7 +487,7 @@
      * The counter is stored as innerHTML in a div.
      */
     QUnit.test('DomElementEventRemoveHandler', function (assert) {
-        /*:DOC += <div id="o">0</div>*/
+        /* :DOC += <div id="o">0</div>*/
         $('<div id="o">0</div>').appendTo(document.body);
         var o = document.getElementById('o'),
             f = function () {
@@ -679,7 +679,6 @@
         });
 
         Highcharts.fireEvent(container, 'testEvent', { a: 'test' }, function (e) {
-            console.log(e.test);
             assert.equal(e.test, value);
         });
 
@@ -690,7 +689,6 @@
         });
 
         Highcharts.fireEvent(obj, 'testEvent2', { a: 'testt2' }, function (e) {
-            console.log(e.test);
             assert.equal(e.test, value);
         });
     });

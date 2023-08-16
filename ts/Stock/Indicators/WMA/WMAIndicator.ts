@@ -10,6 +10,12 @@
 
 'use strict';
 
+/* *
+ *
+ *  Imports
+ *
+ * */
+
 import type IndicatorValuesObject from '../IndicatorValuesObject';
 import type LineSeries from '../../../Series/Line/LineSeries';
 import type {
@@ -19,18 +25,19 @@ import type {
 import type WMAPoint from './WMAPoint';
 
 import SeriesRegistry from '../../../Core/Series/SeriesRegistry.js';
-const {
-    seriesTypes: {
-        sma: SMAIndicator
-    }
-} = SeriesRegistry;
+const { sma: SMAIndicator } = SeriesRegistry.seriesTypes;
 import U from '../../../Core/Utilities.js';
 const {
     isArray,
     merge
 } = U;
 
-/* eslint-disable valid-jsdoc */
+/* *
+ *
+ *  Functions
+ *
+ * */
+
 // Utils:
 /**
  * @private
@@ -42,7 +49,7 @@ function accumulateAverage(
     i: number,
     index: number
 ): void {
-    var xValue: number = xVal[i],
+    const xValue: number = xVal[i],
         yValue: (number|Array<number>) = index < 0 ? yVal[i] : yVal[i][index];
 
     points.push([xValue, yValue]);
@@ -58,7 +65,7 @@ function weightedSumArray(
     // The denominator is the sum of the number of days as a triangular number.
     // If there are 5 days, the triangular numbers are 5, 4, 3, 2, and 1.
     // The sum is 5 + 4 + 3 + 2 + 1 = 15.
-    var denominator = (pLen + 1) / 2 * pLen;
+    const denominator = (pLen + 1) / 2 * pLen;
 
     // reduce VS loop => reduce
     return (array.reduce(
@@ -80,7 +87,7 @@ function populateAverage(
     yVal: Array<Array<number>>,
     i: number
 ): Array<number> {
-    var pLen = points.length,
+    const pLen = points.length,
         wmaY = weightedSumArray(points, pLen),
         wmaX = xVal[i - 1];
 
@@ -88,7 +95,12 @@ function populateAverage(
 
     return [wmaX, wmaY];
 }
-/* eslint-enable valid-jsdoc */
+
+/* *
+ *
+ *  Class
+ *
+ * */
 
 /**
  * The SMA series type.
@@ -100,6 +112,13 @@ function populateAverage(
  * @augments Highcharts.Series
  */
 class WMAIndicator extends SMAIndicator {
+
+    /* *
+     *
+     *  Static Properties
+     *
+     * */
+
     /**
      * Weighted moving average indicator (WMA). This series requires `linkedTo`
      * option to be set.
@@ -119,31 +138,42 @@ class WMAIndicator extends SMAIndicator {
             index: 3,
             period: 9
         }
-    } as WMAOptions)
+    } as WMAOptions);
+
+    /* *
+     *
+     *  Properties
+     *
+     * */
 
     public data: Array<WMAPoint> = void 0 as any;
     public options: WMAOptions = void 0 as any;
     public points: Array<WMAPoint> = void 0 as any;
 
+    /* *
+     *
+     *  Functions
+     *
+     * */
 
     public getValues <TLinkedSeries extends LineSeries>(
         series: TLinkedSeries,
         params: WMAParamsOptions
     ): (IndicatorValuesObject<TLinkedSeries>|undefined) {
-        var period: number = params.period as any,
+        const period: number = params.period as any,
             xVal: Array<number> = (series.xData as any),
             yVal: Array<Array<number>> = (series.yData as any),
             yValLen = yVal ? yVal.length : 0,
-            range = 1,
             xValue: number = xVal[0],
-            yValue: (number|Array<number>) = yVal[0],
-            WMA: Array<Array<number>> = [],
+            wma: Array<Array<number>> = [],
             xData: Array<number> = [],
-            yData: Array<number> = [],
+            yData: Array<number> = [];
+
+        let range = 1,
             index = -1,
             i: (number|undefined),
-            points: Array<[number, (number|Array<number>)]>,
-            WMAPoint: (Array<number>|undefined);
+            wmaPoint: (Array<number>|undefined),
+            yValue: (number|Array<number>) = yVal[0];
 
         if (xVal.length < period) {
             return;
@@ -154,8 +184,10 @@ class WMAIndicator extends SMAIndicator {
             index = (params.index as any);
             yValue = yVal[0][index];
         }
+
         // Starting point
-        points = [[xValue, yValue]];
+        const points: Array<[number, (number|Array<number>)]> =
+            [[xValue, yValue]];
 
         // Accumulate first N-points
         while (range !== period) {
@@ -165,30 +197,43 @@ class WMAIndicator extends SMAIndicator {
 
         // Calculate value one-by-one for each period in visible data
         for (i = range; i < yValLen; i++) {
-            WMAPoint = populateAverage(points, xVal, yVal, i);
-            WMA.push(WMAPoint);
-            xData.push(WMAPoint[0]);
-            yData.push(WMAPoint[1]);
+            wmaPoint = populateAverage(points, xVal, yVal, i);
+            wma.push(wmaPoint);
+            xData.push(wmaPoint[0]);
+            yData.push(wmaPoint[1]);
 
             accumulateAverage(points, xVal, yVal, i, index);
         }
 
-        WMAPoint = populateAverage(points, xVal, yVal, i);
-        WMA.push(WMAPoint);
-        xData.push(WMAPoint[0]);
-        yData.push(WMAPoint[1]);
+        wmaPoint = populateAverage(points, xVal, yVal, i);
+        wma.push(wmaPoint);
+        xData.push(wmaPoint[0]);
+        yData.push(wmaPoint[1]);
 
         return {
-            values: WMA,
+            values: wma,
             xData: xData,
             yData: yData
         } as IndicatorValuesObject<TLinkedSeries>;
     }
+
 }
+
+/* *
+ *
+ *  Class Prototype
+ *
+ * */
 
 interface WMAIndicator {
     pointClass: typeof WMAPoint;
 }
+
+/* *
+ *
+ *  Registry
+ *
+ * */
 
 declare module '../../../Core/Series/SeriesType' {
     interface SeriesTypeRegistry {
@@ -205,6 +250,13 @@ SeriesRegistry.registerSeriesType('wma', WMAIndicator);
  * */
 
 export default WMAIndicator;
+
+/* *
+ *
+ *  API Options
+ *
+ * */
+
 /**
  * A `WMA` series. If the [type](#series.wma.type) option is not specified, it
  * is inherited from [chart.type](#chart.type).

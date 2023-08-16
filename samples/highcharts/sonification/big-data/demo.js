@@ -4,33 +4,57 @@ for (var i = 0; i < 1000; ++i) {
     data.push(Math.sin(i / 50) * 3 + Math.random() - 0.5);
 }
 
-Highcharts.chart('container', {
+// Show the chart
+var chart = Highcharts.chart('container', {
     title: {
-        text: 'Click series to sonify'
+        text: 'Large dataset sonified',
+        align: 'left',
+        margin: 35
     },
     legend: {
         enabled: false
     },
-    series: [{
-        data: data,
-        cursor: 'pointer',
+    accessibility: {
+        landmarkVerbosity: 'one'
+    },
+    lang: {
+        accessibility: {
+            chartContainerLabel: 'Big data sonification. Highcharts interactive chart.'
+        }
+    },
+    sonification: {
         events: {
-            click: function () {
-                this.sonify();
+            onPlay: function () {
+                document.getElementById('btn').textContent = 'Stop';
+            },
+            onStop: function () {
+                document.getElementById('btn').textContent = 'Play';
             }
         },
-        sonification: {
-            duration: 3000,
-            instruments: [{
-                instrument: 'triangleMajor',
-                minFrequency: 200,
-                maxFrequency: 2000,
-                mapping: {
-                    volume: 0.6,
-                    duration: 50,
-                    pan: 'x'
+        defaultInstrumentOptions: {
+            instrument: 'square',
+            mapping: {
+                lowpass: {
+                    frequency: 2000
+                },
+                highpass: {
+                    frequency: 200
                 }
-            }]
+            }
         }
+    },
+    tooltip: {
+        valueDecimals: 2
+    },
+    series: [{
+        data: data
     }]
 });
+
+// Play/Stop button
+document.getElementById('btn').onclick = function () {
+    var btn = this;
+    chart.toggleSonify(true, function () {
+        btn.textContent = 'Play';
+    });
+};

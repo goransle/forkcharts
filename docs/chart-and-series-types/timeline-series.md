@@ -36,16 +36,16 @@ The data series has no `x`property set.
         label: 'Event label',
         description: 'Description of this event.'
     }, {
-        name: ‘Another date’,
-        label: ‘Another event label’,
-        description: ‘Description of second event’
+        name: 'Another date',
+        label: 'Another event label',
+        description: 'Description of second event'
     }] 
 
 ### Events tied to a datetime axis
 
-Set for each data point the n `x` property with a timestamp in milliseconds since 1970.
+To place events on a datetime axis, the `x` property can be set with a timestamp in milliseconds since 1970.
 
-Examples of data series:
+Example of data series:
 
     
     data: [{
@@ -56,8 +56,8 @@ Examples of data series:
     }, {
         x: 1526774400000,
         name: 'Event name',
-        label: ‘Another event label’,
-        description: ‘Description of second event’
+        label: 'Another event label',
+        description: 'Description of second event'
     }]
 
 _The demo below illustrates a timeline of space exploration. The demo shows even intervals_
@@ -85,8 +85,8 @@ Use the `alternate` property in the `dataLabels` configuration, for placing the 
 Other configuring options
 -------------------------
 
-Customize a timeline chart with options that are standard to most Highcharts charts, such as data labels `width`, `distance` or using the point properties, `color`, `x`, `y`, `markers` or the connectors. In the demo below the color properties of the `marker` data point property is setting the color of a section in the timeline.
+Customize a timeline chart with options that are standard to most Highcharts charts, such as data labels `width`, `distance` or using the point properties, `color`, `x`, `markers` or the connectors. In the demo below the color properties of the `marker` data point property is setting the color of a section in the timeline.
 
 The demo below illustrates styling of different elements in the timeline series chart.
 
-<iframe width="100%" height="470" style="null" src=https://jsfiddle.net/gvaartjes/7htbp82f/embedded/result allow="fullscreen"></iframe>
+<iframe style="width: 100%; height: 470px; border: none;" src=https://www.highcharts.com/samples/embed/highcharts/blog/timeline allow="fullscreen"></iframe>

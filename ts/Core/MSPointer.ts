@@ -10,8 +10,16 @@
 
 'use strict';
 
+/* *
+ *
+ *  Imports
+ *
+ * */
+
 import type Chart from './Chart/Chart';
+import type Options from './Options';
 import type PointerEvent from './PointerEvent';
+
 import H from './Globals.js';
 const {
     charts,
@@ -25,31 +33,54 @@ const {
     addEvent,
     css,
     objectEach,
+    pick,
     removeEvent
 } = U;
 
-/**
- * Internal types
- * @private
- */
+/* *
+ *
+ *  Declarations
+ *
+ * */
+
 declare global {
+    /** @deprecated */
+    interface MSPointerEvent extends Partial<PointerEvent> {
+        /** @deprecated */
+        readonly MSPOINTER_TYPE_TOUCH: string;
+        readonly currentTarget?: EventTarget;
+        readonly pointerId: number;
+        readonly pointerType?: undefined;
+        /** @deprecated */
+        readonly toElement: Element;
+    }
     interface Window {
-        MSPointerEvent: typeof MSPointerEvent;
-        PointerEvent: typeof PointerEvent;
+        /** @deprecated */
+        MSPointerEvent?: Class<MSPointerEvent>;
     }
 }
 
-/* globals MSPointerEvent, PointerEvent */
+/* *
+ *
+ *  Constants
+ *
+ * */
 
 // The touches object keeps track of the points being touched at all times
 const touches = {} as Record<string, PointerEvent>;
 const hasPointerEvent = !!win.PointerEvent;
 
+/* *
+ *
+ *  Functions
+ *
+ * */
+
 /* eslint-disable valid-jsdoc */
 
 /** @private */
 function getWebkitTouches(): void {
-    var fake = [] as any;
+    const fake = [] as any;
 
     fake.item = function (i: string): any {
         return this[i];
@@ -66,21 +97,22 @@ function getWebkitTouches(): void {
 
 /** @private */
 function translateMSPointer(
-    e: (PointerEvent|MSPointerEvent),
+    e: MSPointerEvent,
     method: string,
     wktype: string,
     func: Function
 ): void {
-    var p;
+    const chart = charts[Pointer.hoverChartIndex || NaN];
 
     if (
         (
             e.pointerType === 'touch' ||
-            e.pointerType === (e as any).MSPOINTER_TYPE_TOUCH
-        ) && charts[H.hoverChartIndex as any]
+            e.pointerType === e.MSPOINTER_TYPE_TOUCH
+        ) && chart
     ) {
+        const p: AnyRecord = chart.pointer;
+
         func(e);
-        p = (charts[H.hoverChartIndex as any] as any).pointer;
         p[method]({
             type: wktype,
             target: e.currentTarget,
@@ -90,8 +122,24 @@ function translateMSPointer(
     }
 }
 
+/* *
+ *
+ *  Class
+ *
+ * */
+
 /** @private */
 class MSPointer extends Pointer {
+
+    /* *
+     *
+     *  Static Functions
+     *
+     * */
+
+    public static isRequired(): boolean {
+        return !!(!H.hasTouch && (win.PointerEvent || win.MSPointerEvent));
+    }
 
     /* *
      *
@@ -101,13 +149,8 @@ class MSPointer extends Pointer {
 
     /**
      * Add or remove the MS Pointer specific events
-     *
      * @private
      * @function Highcharts.Pointer#batchMSEvents
-     *
-     * @param {Function} fn
-     *
-     * @return {void}
      */
     private batchMSEvents(fn: Function): void {
         fn(
@@ -136,7 +179,7 @@ class MSPointer extends Pointer {
     }
 
     // Disable default IE actions for pinch and such on chart element
-    public init(chart: Chart, options: Highcharts.Options): void {
+    public init(chart: Chart, options: Options): void {
 
         super.init(chart, options);
 
@@ -151,17 +194,13 @@ class MSPointer extends Pointer {
     /**
      * @private
      * @function Highcharts.Pointer#onContainerPointerDown
-     *
-     * @param {Highcharts.PointerEventObject} e
-     *
-     * @return {void}
      */
-    private onContainerPointerDown(e: PointerEvent): void {
+    private onContainerPointerDown(e: MSPointerEvent): void {
         translateMSPointer(
             e,
             'onContainerTouchStart',
             'touchstart',
-            function (e: PointerEvent): void {
+            function (e: MSPointerEvent): void {
                 (touches as any)[e.pointerId] = {
                     pageX: e.pageX,
                     pageY: e.pageY,
@@ -174,17 +213,13 @@ class MSPointer extends Pointer {
     /**
      * @private
      * @function Highcharts.Pointer#onContainerPointerMove
-     *
-     * @param {Highcharts.PointerEventObject} e
-     *
-     * @return {void}
      */
-    private onContainerPointerMove(e: PointerEvent): void {
+    private onContainerPointerMove(e: MSPointerEvent): void {
         translateMSPointer(
             e,
             'onContainerTouchMove',
             'touchmove',
-            function (e: PointerEvent): void {
+            function (e: MSPointerEvent): void {
                 (touches as any)[e.pointerId] = (
                     { pageX: e.pageX, pageY: e.pageY }
                 );
@@ -198,17 +233,13 @@ class MSPointer extends Pointer {
     /**
      * @private
      * @function Highcharts.Pointer#onDocumentPointerUp
-     *
-     * @param {Highcharts.PointerEventObject} e
-     *
-     * @return {void}
      */
-    private onDocumentPointerUp(e: PointerEvent): void {
+    private onDocumentPointerUp(e: MSPointerEvent): void {
         translateMSPointer(
             e,
             'onDocumentTouchEnd',
             'touchend',
-            function (e: PointerEvent): void {
+            function (e: MSPointerEvent): void {
                 delete (touches as any)[e.pointerId];
             }
         );
@@ -216,13 +247,59 @@ class MSPointer extends Pointer {
 
     // Add IE specific touch events to chart
     public setDOMEvents(): void {
-
+        const tooltip = this.chart.tooltip;
         super.setDOMEvents();
 
-        if (this.hasZoom || this.followTouchMove) {
+        if (
+            this.hasZoom ||
+            pick((tooltip && tooltip.options.followTouchMove), true)
+        ) {
             this.batchMSEvents(addEvent);
         }
     }
 }
+
+/* *
+ *
+ *  Class Namespace
+ *
+ * */
+
+namespace MSPointer {
+
+    /* *
+     *
+     *  Constants
+     *
+     * */
+
+    const composedMembers: Array<unknown> = [];
+
+    /* *
+     *
+     *  Functions
+     *
+     * */
+
+    /**
+     * @private
+     */
+    export function compose(ChartClass: typeof Chart): void {
+
+        if (U.pushUnique(composedMembers, ChartClass)) {
+            addEvent(ChartClass, 'beforeRender', function (): void {
+                this.pointer = new MSPointer(this, this.options);
+            });
+        }
+
+    }
+
+}
+
+/* *
+ *
+ *  Default Export
+ *
+ * */
 
 export default MSPointer;

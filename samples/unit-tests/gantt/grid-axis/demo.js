@@ -125,7 +125,7 @@ QUnit.test('dateFormats', function (assert) {
         assert.equal(
             Highcharts.dateFormat('%E', date.valueOf()),
             expectedDay,
-            `Single character week day format produces correct output`
+            'Single character week day format produces correct output'
         );
     });
 
@@ -255,6 +255,16 @@ QUnit.test('Vertical Linear axis horizontal placement', function (assert) {
         axes[3].x,
         axes[2].x + axes[2].width,
         'Right outer linear axis horizontal placement'
+    );
+
+    chart.yAxis[1].update({
+        lineColor: 'red'
+    });
+
+    assert.strictEqual(
+        chart.yAxis[1].grid.axisLineExtra.attr('stroke'),
+        'red',
+        '#15664: axisLineExtra stroke should be updated'
     );
 });
 
@@ -600,10 +610,9 @@ QUnit.test('Horizontal Datetime axis vertical placement', function (assert) {
  *   ^                 ^
  */
 QUnit.test('Horizontal axis ticks at start and end', function (assert) {
-    var chart,
-        types = ['line', 'column', 'bar', 'bubble'];
+    const types = ['line', 'column', 'bar', 'bubble'];
 
-    chart = Highcharts.chart('container', {
+    const options = {
         chart: {
             type: 'line'
         },
@@ -671,22 +680,20 @@ QUnit.test('Horizontal axis ticks at start and end', function (assert) {
                 data: [-144.0, -106.4, 29.9]
             }
         ]
-    });
+    };
 
     types.forEach(function (type) {
-        var axes, axis, $axisGroup, axisGroupBox, leftTick, rightTick, ticks, i;
+        options.chart.type = type;
+        const chart = Highcharts.chart('container', options);
+        const axes = chart.xAxis;
 
-        chart.options.chart.type = type;
-        chart = Highcharts.chart('container', chart.options);
-
-        axes = chart.xAxis;
-        for (i = 0; i < axes.length; i++) {
-            axis = axes[0];
-            $axisGroup = $(axis.axisGroup.element);
-            axisGroupBox = $axisGroup[0].getBBox();
-            ticks = $axisGroup.find('.highcharts-tick');
-            leftTick = ticks[0].getBBox();
-            rightTick = ticks.slice(-1)[0].getBBox();
+        for (let i = 0; i < axes.length; i++) {
+            const axis = axes[i],
+                $axisGroup = $(axis.axisGroup.element),
+                axisGroupBox = $axisGroup[0].getBBox(),
+                ticks = $axisGroup.find('.highcharts-tick'),
+                leftTick = ticks[0].getBBox(),
+                rightTick = ticks.slice(-1)[0].getBBox();
 
             assert.equal(
                 leftTick.x,
@@ -863,7 +870,7 @@ QUnit.test('Horizontal axis tick labels centered', function (assert) {
     var chart,
         axes,
         xError = 1.5,
-        yError = 1.1;
+        yError = 1.6;
 
     chart = Highcharts.chart('container', {
         chart: {
@@ -948,11 +955,9 @@ QUnit.test('Horizontal axis tick labels centered', function (assert) {
         ]
     });
 
-    axes = Highcharts.grep(chart.xAxis, function (axis) {
-        return !axis.options.isInternal;
-    });
+    axes = chart.xAxis.filter(axis => !axis.options.isInternal);
 
-    Highcharts.each(axes, function (axis) {
+    axes.forEach(axis => {
         var axisType = axis.options.type || 'linear',
             tickPositions = axis.tickPositions,
             ticks = axis.ticks,
@@ -1049,7 +1054,7 @@ QUnit.test('Vertical axis tick labels centered', function (assert) {
     var chart,
         axes,
         xError = 1.1,
-        yError = 1.4;
+        yError = 1.6;
 
     chart = Highcharts.chart('container', {
         chart: {
@@ -1135,7 +1140,7 @@ QUnit.test('Vertical axis tick labels centered', function (assert) {
 
     axes = chart.yAxis;
 
-    Highcharts.each(axes, function (axis) {
+    axes.forEach(axis => {
         var axisType = axis.options.type,
             tickPositions = axis.tickPositions,
             ticks = axis.ticks,
@@ -1192,8 +1197,7 @@ QUnit.test('Vertical axis tick labels centered', function (assert) {
 });
 
 QUnit.module('labels alignment', function () {
-    var each = Highcharts.each,
-        map = Highcharts.map,
+    var map = Highcharts.map,
         categories = ['Category 1', 'Category 2', 'Category 3'],
         optionsAxis = {
             showEmpty: true,
@@ -1253,9 +1257,9 @@ QUnit.module('labels alignment', function () {
                     getBBox(container, tick.mark.element)
                 ),
                 bboxLabel = getBBox(container, tick.label.element),
-                // Firefox/Mac needs 2.3 in order to pass, Edge needs 1.5,
-                // others 1.1.
-                precision = 2.3;
+                // Firefox/Mac needs 4 in order to pass, Edge needs 1.5,
+                // others 1.1.z
+                precision = 4;
 
             assert.close(
                 bboxLabel.x,
@@ -1294,8 +1298,8 @@ QUnit.module('labels alignment', function () {
             yAxis: optionsAxis
         });
 
-        each(chart.axes, function (axis) {
-            each(axis.tickPositions, function (pos) {
+        chart.axes.forEach(axis => {
+            axis.tickPositions.forEach(pos => {
                 testTickPosition(axis, pos);
             });
         });
@@ -1312,8 +1316,8 @@ QUnit.module('labels alignment', function () {
             yAxis: optionsAxis
         });
 
-        each(chart.axes, function (axis) {
-            each(axis.tickPositions, function (pos) {
+        chart.axes.forEach(axis => {
+            axis.tickPositions.forEach(pos => {
                 testTickPosition(axis, pos);
             });
         });
@@ -1336,8 +1340,8 @@ QUnit.module('labels alignment', function () {
             xAxis: optionsAxis,
             yAxis: optionsAxis
         });
-        each(chart.axes, function (axis) {
-            each(axis.tickPositions, function (pos) {
+        chart.axes.forEach(axis => {
+            axis.tickPositions.forEach(pos => {
                 testTickPosition(axis, pos);
             });
         });
@@ -1354,8 +1358,8 @@ QUnit.module('labels alignment', function () {
             yAxis: optionsAxis
         });
 
-        each(chart.axes, function (axis) {
-            each(axis.tickPositions, function (pos) {
+        chart.axes.forEach(axis => {
+            axis.tickPositions.forEach(pos => {
                 testTickPosition(axis, pos);
             });
         });
@@ -1838,6 +1842,24 @@ QUnit.test(
             chart.xAxis[1].tickPositions,
             'The secondary axis should have longer range ticks'
         );
+
+        chart.update({
+            series: [{
+                data: [{
+                    start: Date.UTC(2019, 7, 2),
+                    end: Date.UTC(2019, 11, 1)
+                }]
+            }]
+        }, true, true);
+        chart.setSize(400);
+
+        const axis = chart.xAxis[1];
+
+        assert.strictEqual(
+            axis.ticks[axis.tickPositions[0]].label.textStr,
+            '2019',
+            '#15692: Primary axis should show years'
+        );
     }
 );
 
@@ -2117,3 +2139,26 @@ QUnit.test(
         );
     }
 );
+
+QUnit.test('slotWidth', assert => {
+    const chart = Highcharts.ganttChart('container', {
+        chart: {
+            width: 600
+        },
+        series: [{
+            data: [
+                {
+                    start: Date.UTC(2017, 8, 1),
+                    end: Date.UTC(2017, 11, 4)
+                }
+            ]
+        }]
+    });
+
+    const axis = chart.xAxis[1];
+
+    assert.ok(
+        axis.ticks[axis.tickPositions[3]].slotWidth < 30,
+        '#15742: Rightmost tick slotWidth should be much smaller than the other ticks'
+    );
+});

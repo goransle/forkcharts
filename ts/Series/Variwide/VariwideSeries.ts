@@ -18,23 +18,24 @@
  *
  * */
 
-import type StackingAxis from '../../Core/Axis/StackingAxis';
+import type StackingAxis from '../../Core/Axis/Stacking/StackingAxis';
 import type VariwideSeriesOptions from './VariwideSeriesOptions';
+
 import SeriesRegistry from '../../Core/Series/SeriesRegistry.js';
 const {
     seriesTypes: {
         column: ColumnSeries
     }
 } = SeriesRegistry;
+import VariwideComposition from './VariwideComposition.js';
 import VariwidePoint from './VariwidePoint.js';
 import U from '../../Core/Utilities.js';
 const {
+    addEvent,
     extend,
     merge,
     pick
 } = U;
-
-import './VariwideComposition.js';
 
 
 /* *
@@ -55,9 +56,12 @@ class VariwideSeries extends ColumnSeries {
 
     /* *
      *
-     * Static properties
+     *  Static Properties
      *
      * */
+
+    public static compose = VariwideComposition.compose;
+
     /**
      * A variwide chart (related to marimekko chart) is a column chart with a
      * variable width expressing a third dimension.
@@ -92,9 +96,11 @@ class VariwideSeries extends ColumnSeries {
 
     /* *
      *
-     * Properties
+     *  Properties
      *
      * */
+
+    public crispOption?: boolean;
     public data: Array<VariwidePoint> = void 0 as any;
     public options: VariwideSeriesOptions = void 0 as any;
     public points: Array<VariwidePoint> = void 0 as any;
@@ -107,10 +113,14 @@ class VariwideSeries extends ColumnSeries {
      * Functions
      *
      * */
+
     public processData(force?: boolean): undefined {
         this.totalZ = 0;
         this.relZ = [];
-        SeriesRegistry.seriesTypes.column.prototype.processData.call(this, force);
+        SeriesRegistry.seriesTypes.column.prototype.processData.call(
+            this,
+            force
+        );
 
         (this.xAxis.reversed ?
             (this.zData as any).slice().reverse() :
@@ -133,8 +143,6 @@ class VariwideSeries extends ColumnSeries {
         }
         return;
     }
-
-    /* eslint-disable valid-jsdoc */
 
     /**
      * Translate an x value inside a given category index into the distorted
@@ -161,12 +169,16 @@ class VariwideSeries extends ColumnSeries {
         point?: VariwidePoint
     ): number {
 
-        var axis = this.xAxis,
+        const axis = this.xAxis,
             relZ = this.relZ,
             i = axis.reversed ? relZ.length - index : index,
             goRight = axis.reversed ? -1 : 1,
-            minPx = axis.toPixels(axis.reversed ? (axis.dataMax || 0) + axis.pointRange : (axis.dataMin || 0)),
-            maxPx = axis.toPixels(axis.reversed ? (axis.dataMin || 0) : (axis.dataMax || 0) + axis.pointRange),
+            minPx = axis.toPixels(axis.reversed ?
+                (axis.dataMax || 0) + axis.pointRange :
+                (axis.dataMin || 0)),
+            maxPx = axis.toPixels(axis.reversed ?
+                (axis.dataMin || 0) :
+                (axis.dataMax || 0) + axis.pointRange),
             len = Math.abs(maxPx - minPx),
             totalZ = this.totalZ,
             left = this.chart.inverted ?
@@ -190,98 +202,32 @@ class VariwideSeries extends ColumnSeries {
 
     /* eslint-enable valid-jsdoc */
 
-    // Extend translation by distoring X position based on Z.
     public translate(): void {
-
         // Temporarily disable crisping when computing original shapeArgs
-        var crispOption = this.options.crisp,
-            xAxis = this.xAxis;
-
+        this.crispOption = this.options.crisp;
         this.options.crisp = false;
 
-        SeriesRegistry.seriesTypes.column.prototype.translate.call(this);
+        super.translate();
 
         // Reset option
-        this.options.crisp = crispOption;
-
-        var inverted = this.chart.inverted,
-            crisp = this.borderWidth % 2 / 2;
-
-        // Distort the points to reflect z dimension
-        this.points.forEach(function (
-            point: VariwidePoint,
-            i: number
-        ): void {
-            var left: number, right: number;
-
-            if (xAxis.variwide) {
-                left = this.postTranslate(
-                    i,
-                    (point.shapeArgs as any).x,
-                    point
-                );
-
-                right = this.postTranslate(
-                    i,
-                    (point.shapeArgs as any).x +
-                    (point.shapeArgs as any).width
-                );
-
-                // For linear or datetime axes, the variwide column should
-                // start with X and extend Z units, without modifying the
-                // axis.
-            } else {
-                left = point.plotX as any;
-                right = xAxis.translate(
-                    (point.x as any) + (point.z as any),
-                    0 as any,
-                    0 as any,
-                    0 as any,
-                    1 as any
-                ) as any;
-            }
-
-            if (this.options.crisp) {
-                left = Math.round(left) - crisp;
-                right = Math.round(right) - crisp;
-            }
-
-            (point.shapeArgs as any).x = left;
-            (point.shapeArgs as any).width = Math.max(right - left, 1);
-
-            // Crosshair position (#8083)
-            point.plotX = (left + right) / 2;
-
-            // Adjust the tooltip position
-            if (!inverted) {
-                (point.tooltipPos as any)[0] =
-                    (point.shapeArgs as any).x +
-                    (point.shapeArgs as any).width / 2;
-            } else {
-                (point.tooltipPos as any)[1] =
-                    xAxis.len - (point.shapeArgs as any).x -
-                    (point.shapeArgs as any).width / 2;
-            }
-        }, this);
-
-        if (this.options.stacking) {
-            this.correctStackLabels();
-        }
+        this.options.crisp = this.crispOption;
     }
 
-    // Function that corrects stack labels positions
+    /**
+     * Function that corrects stack labels positions
+     * @private
+     */
     public correctStackLabels(): void {
-        var series = this,
+        const series = this,
             options = series.options,
-            yAxis = series.yAxis as StackingAxis,
-            pointStack,
+            yAxis = series.yAxis as StackingAxis;
+
+        let pointStack,
             pointWidth,
             stack,
             xValue;
 
-        series.points.forEach(function (
-            point: VariwidePoint
-        ): void {
+        for (const point of series.points) {
             xValue = point.x;
             pointWidth = (point.shapeArgs as any).width;
             stack = yAxis.stacking.stacks[(
@@ -303,19 +249,76 @@ class VariwideSeries extends ColumnSeries {
                         pointWidth || 0,
                         void 0,
                         void 0,
-                        point.plotX
+                        point.plotX,
+                        series.xAxis
                     );
                 }
             }
-        });
+        }
     }
 }
 
+// Extend translation by distoring X position based on Z.
+addEvent(VariwideSeries, 'afterColumnTranslate', function (): void {
+
+    // Temporarily disable crisping when computing original shapeArgs
+    const xAxis = this.xAxis,
+        inverted = this.chart.inverted,
+        crisp = this.borderWidth % 2 / 2;
+
+    // Distort the points to reflect z dimension
+    this.points.forEach((
+        point: VariwidePoint,
+        i: number
+    ): void => {
+        const shapeArgs = point.shapeArgs || {},
+            { x = 0, width = 0 } = shapeArgs,
+            { plotX = 0, tooltipPos, z = 0 } = point;
+        let left: number, right: number;
+
+        if (xAxis.variwide) {
+            left = this.postTranslate(i, x, point);
+            right = this.postTranslate(i, x + width);
+
+        // For linear or datetime axes, the variwide column should start with X
+        // and extend Z units, without modifying the axis.
+        } else {
+            left = plotX;
+            right = xAxis.translate(point.x + z, false, false, false, true);
+        }
+
+        if (this.crispOption) {
+            left = Math.round(left) - crisp;
+            right = Math.round(right) - crisp;
+        }
+
+        shapeArgs.x = left;
+        shapeArgs.width = Math.max(right - left, 1);
+
+        // Crosshair position (#8083)
+        point.plotX = (left + right) / 2;
+
+        // Adjust the tooltip position
+        if (tooltipPos) {
+            if (!inverted) {
+                tooltipPos[0] = shapeArgs.x + shapeArgs.width / 2;
+            } else {
+                tooltipPos[1] = xAxis.len - shapeArgs.x - shapeArgs.width / 2;
+            }
+        }
+    });
+
+    if (this.options.stacking) {
+        this.correctStackLabels();
+    }
+}, { order: 2 });
+
 /* *
  *
- * Prototype properties
+ *  Class Prototype
  *
  * */
+
 interface VariwideSeries {
     irregularWidths: boolean;
     parallelArrays: Array<string>;
@@ -331,9 +334,10 @@ extend(VariwideSeries.prototype, {
 
 /* *
  *
- * Registry
+ *  Registry
  *
  * */
+
 declare module '../../Core/Series/SeriesType' {
     interface SeriesTypeRegistry {
         variwide: typeof VariwideSeries;
@@ -344,14 +348,15 @@ SeriesRegistry.registerSeriesType('variwide', VariwideSeries);
 
 /* *
  *
- * Default export
+ *  Default Export
  *
  * */
+
 export default VariwideSeries;
 
 /* *
  *
- * API Options
+ *  API Options
  *
  * */
 

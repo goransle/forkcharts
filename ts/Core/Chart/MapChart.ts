@@ -17,16 +17,26 @@
  * */
 
 import type { HTMLDOMElement } from '../Renderer/DOMElementType';
+import type MapView from '../../Maps/MapView';
+import type Options from '../Options';
 import type SVGPath from '../Renderer/SVG/SVGPath';
+
 import Chart from './Chart.js';
+import D from '../Defaults.js';
+const { getOptions } = D;
 import SVGRenderer from '../Renderer/SVG/SVGRenderer.js';
 import U from '../Utilities.js';
 const {
-    getOptions,
     merge,
     pick
 } = U;
 import '../../Maps/MapSymbols.js';
+
+declare module './ChartLike'{
+    interface ChartLike {
+        mapView?: MapView;
+    }
+}
 
 /**
  * Map-optimized chart. Use {@link Highcharts.Chart|Chart} for common charts.
@@ -51,35 +61,18 @@ class MapChart extends Chart {
      *        Function to run when the chart has loaded and and all external
      *        images are loaded.
      *
-     * @return {void}
      *
-     * @fires Highcharts.MapChart#event:init
-     * @fires Highcharts.MapChart#event:afterInit
+     * @emits Highcharts.MapChart#event:init
+     * @emits Highcharts.MapChart#event:afterInit
      */
     public init(
-        userOptions: Partial<Highcharts.Options>,
+        userOptions: Partial<Options>,
         callback?: Chart.CallbackFunction
     ): void {
-        var hiddenAxis = {
-                endOnTick: false,
-                visible: false,
-                minPadding: 0,
-                maxPadding: 0,
-                startOnTick: false
-            },
-            seriesOptions = userOptions.series,
-            defaultCreditsOptions = getOptions().credits;
 
-        /* For visual testing
-        hiddenAxis.gridLineWidth = 1;
-        hiddenAxis.gridZIndex = 10;
-        hiddenAxis.tickPositions = undefined;
-        // */
+        const defaultCreditsOptions = getOptions().credits;
 
-        // Don't merge the data
-        userOptions.series = void 0;
-
-        userOptions = merge(
+        const options = merge(
             {
                 chart: {
                     panning: {
@@ -99,25 +92,15 @@ class MapChart extends Chart {
                         '{geojson.copyright}'
                     )
                 },
+                mapView: {}, // Required to enable Chart.mapView
                 tooltip: {
                     followTouchMove: false
-                },
-                xAxis: hiddenAxis,
-                yAxis: merge(hiddenAxis, { reversed: true })
-            },
-            userOptions, // user's options
-
-            { // forced options
-                chart: {
-                    inverted: false,
-                    alignTicks: false
                 }
-            }
+            },
+            userOptions // user's options
         );
 
-        userOptions.series = seriesOptions;
-
-        super.init(userOptions, callback);
+        super.init(options, callback);
     }
 }
 
@@ -144,28 +127,25 @@ namespace MapChart {
      * @function Highcharts.mapChart
      *
      * @param {string|Highcharts.HTMLDOMElement} [renderTo]
-     * The DOM element to render to, or its id.
+     *        The DOM element to render to, or its id.
      *
      * @param {Highcharts.Options} options
-     * The chart options structure as described in the
-     * [options reference](https://api.highcharts.com/highstock).
+     *        The chart options structure as described in the
+     *        [options reference](https://api.highcharts.com/highstock).
      *
      * @param {Highcharts.ChartCallbackFunction} [callback]
-     * A function to execute when the chart object is finished loading and
-     * rendering. In most cases the chart is built in one thread, but in
-     * Internet Explorer version 8 or less the chart is sometimes initialized
-     * before the document is ready, and in these cases the chart object will
-     * not be finished synchronously. As a consequence, code that relies on the
-     * newly built Chart object should always run in the callback. Defining a
-     * [chart.events.load](https://api.highcharts.com/highstock/chart.events.load)
-     * handler is equivalent.
+     *        A function to execute when the chart object is finished
+     *        rendering and all external image files (`chart.backgroundImage`,
+     *        `chart.plotBackgroundImage` etc) are loaded.  Defining a
+     *        [chart.events.load](https://api.highcharts.com/highstock/chart.events.load)
+     *        handler is equivalent.
      *
      * @return {Highcharts.MapChart}
      * The chart object.
      */
     export function mapChart(
-        a: (string|HTMLDOMElement|Highcharts.Options),
-        b?: (Chart.CallbackFunction|Highcharts.Options),
+        a: (string|HTMLDOMElement|Options),
+        b?: (Chart.CallbackFunction|Options),
         c?: Chart.CallbackFunction
     ): MapChart {
         return new MapChart(a as any, b as any, c);
@@ -181,6 +161,7 @@ namespace MapChart {
      * @param {string|Array<string|number>} path
      *
      * @return {Highcharts.SVGPathArray}
+     * Splitted SVG path
      */
     export function splitPath(
         path: string|Array<string|number>

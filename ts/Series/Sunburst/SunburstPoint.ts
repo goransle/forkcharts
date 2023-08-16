@@ -23,6 +23,7 @@
 import type SunburstPointOptions from './SunburstPointOptions';
 import type SunburstSeries from './SunburstSeries';
 import type SVGElement from '../../Core/Renderer/SVG/SVGElement';
+
 import SeriesRegistry from '../../Core/Series/SeriesRegistry.js';
 const {
     series: {
@@ -39,7 +40,9 @@ const {
     }
 } = SeriesRegistry;
 import U from '../../Core/Utilities.js';
+import SunburstNode from './SunburstNode';
 const { correctFloat, extend } = U;
+
 
 /* *
  *
@@ -47,7 +50,7 @@ const { correctFloat, extend } = U;
  *
  * */
 
-class SunburstPoint extends TreemapPoint implements Highcharts.DrawPoint {
+class SunburstPoint extends TreemapPoint {
 
     /* *
      *
@@ -61,16 +64,17 @@ class SunburstPoint extends TreemapPoint implements Highcharts.DrawPoint {
 
     public outerArcLength?: number;
 
-    public node: SunburstSeries.NodeObject = void 0 as any;
+    public node: SunburstNode = void 0 as any;
 
     public options: SunburstPointOptions = void 0 as any;
 
     public series: SunburstSeries = void 0 as any;
 
-    public shapeExisting: SunburstSeries.NodeValuesObject = void 0 as any;
+    public shapeExisting: SunburstNode.NodeValuesObject = void 0 as any;
 
     public sliced?: boolean;
 
+    public shapeType: 'arc'|'circle'|'path'|'rect'|'text' = void 0 as any;
     /* *
      *
      *  Functions
@@ -80,7 +84,7 @@ class SunburstPoint extends TreemapPoint implements Highcharts.DrawPoint {
     /* eslint-disable valid-jsdoc */
 
     public getDataLabelPath(label: SVGElement): SVGElement {
-        var renderer = this.series.chart.renderer,
+        let renderer = this.series.chart.renderer,
             shapeArgs = this.shapeExisting,
             start = shapeArgs.start,
             end = shapeArgs.end,
@@ -100,34 +104,40 @@ class SunburstPoint extends TreemapPoint implements Highcharts.DrawPoint {
             end = -Math.PI / 360;
             upperHalf = true;
         }
-        // Check if dataLabels should be render in the
-        // upper half of the circle
+        // Check if dataLabels should be render in the upper half of the circle
         if (end - start > Math.PI) {
             upperHalf = false;
             moreThanHalf = true;
+
+            // Close to the full circle, add some padding so that the SVG
+            // renderer treats it as separate points (#18884).
+            if ((end - start) > 2 * Math.PI - 0.01) {
+                start += 0.01;
+                end -= 0.01;
+            }
         }
 
         if (this.dataLabelPath) {
             this.dataLabelPath = this.dataLabelPath.destroy();
         }
 
+        // All times
         this.dataLabelPath = renderer
             .arc({
                 open: true,
                 longArc: moreThanHalf ? 1 : 0
             })
-            // Add it inside the data label group so it gets destroyed
-            // with the label
-            .add(label);
+            .attr({
 
-        this.dataLabelPath.attr({
-            start: (upperHalf ? start : end),
-            end: (upperHalf ? end : start),
-            clockwise: +upperHalf,
-            x: shapeArgs.x,
-            y: shapeArgs.y,
-            r: (r + shapeArgs.innerR) / 2
-        });
+                start: (upperHalf ? start : end),
+                end: (upperHalf ? end : start),
+                clockwise: +upperHalf,
+                x: shapeArgs.x,
+                y: shapeArgs.y,
+                r: (r + shapeArgs.innerR) / 2
+            })
+            .add(renderer.defs);
+
         return this.dataLabelPath;
     }
 
@@ -135,12 +145,19 @@ class SunburstPoint extends TreemapPoint implements Highcharts.DrawPoint {
         return true;
     }
 
-    public shouldDraw(): boolean {
-        return !this.isNull;
-    }
-
     /* eslint-enable valid-jsdoc */
 
+}
+
+/* *
+ *
+ *  Class Prototype
+ *
+ * */
+
+interface SunburstPoint {
+    setState: typeof Point.prototype.setState;
+    setVisible: typeof TreemapPoint.prototype.setVisible;
 }
 
 extend(SunburstPoint.prototype, {

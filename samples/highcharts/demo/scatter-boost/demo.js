@@ -1,8 +1,9 @@
 // Prepare the data
-var data = [],
-    n = 1000000,
-    i;
-for (i = 0; i < n; i += 1) {
+
+const data = [],
+    n = 1000000;
+
+for (let i = 0; i < n; i += 1) {
     data.push([
         Math.pow(Math.random(), 2) * 100,
         Math.pow(Math.random(), 2) * 100
@@ -24,6 +25,12 @@ Highcharts.chart('container', {
     boost: {
         useGPUTranslations: true,
         usePreAllocated: true
+    },
+
+    accessibility: {
+        screenReaderSection: {
+            beforeChartFormat: '<{headingTagName}>{chartTitle}</{headingTagName}><div>{chartLongdesc}</div><div>{xAxisDescription}</div><div>{yAxisDescription}</div>'
+        }
     },
 
     xAxis: {

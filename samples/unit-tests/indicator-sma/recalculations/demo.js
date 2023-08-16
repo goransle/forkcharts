@@ -40,7 +40,11 @@ QUnit.test('Test algorithm on data updates.', function (assert) {
                     type: 'sma',
                     linkedTo: 'main'
                 }
-            ]
+            ],
+            scrollbar: {
+                buttonsEnabled: true,
+                height: 14
+            }
         }),
         pointsValue = [],
         secondChart,
@@ -146,9 +150,67 @@ QUnit.test('Test algorithm on data updates.', function (assert) {
 
     assert.ok('No errors after updating point in a cropped dataset (#8968)');
 
+    chart.xAxis[0].setExtremes(0, 30);
+    const yBefore = chart.series[1].points[0].y;
+
+    chart.series[1].update(
+        { name: 'TEST', dataGrouping: { } },
+        false
+    );
+
+    chart.series[0].update(
+        {
+            type: 'ohlc',
+            data: [
+                [20, 30, 10, 125],
+                [20, 30, 10, 123],
+                [20, 30, 10, 121],
+                [20, 30, 10, 125],
+                [20, 30, 10, 126],
+                [20, 30, 10, 123],
+                [20, 30, 10, 127],
+                [20, 30, 10, 122],
+                [20, 30, 10, 122],
+                [20, 30, 10, 123],
+                [20, 30, 10, 125],
+                [20, 30, 10, 126]
+            ]
+        },
+        false
+    );
+
+    assert.ok(
+        true,
+        '#16670: Update without redraw should not throw errors.'
+    );
+
+    chart.redraw();
+
+    assert.notStrictEqual(
+        chart.series[1].points[0].y,
+        yBefore,
+        '#15383: SMA indicator should have recalculated'
+    );
+
     secondChart = Highcharts.stockChart('container', {
         xAxis: {
             minRange: 1
+        },
+        scrollbar: {
+            buttonsEnabled: true,
+            height: 14
+        },
+        rangeSelector: {
+            buttons: [{
+                type: 'hour',
+                count: 1,
+                text: '1h',
+                dataGrouping: {
+                    units: [
+                        ['hour', [1]]
+                    ]
+                }
+            }]
         },
         series: [
             {
@@ -255,5 +317,94 @@ QUnit.test('Test algorithm on data updates.', function (assert) {
             secondChart.series[1].processedXData.length - 1
         ],
         'Correct last point position after addPoint() with shift parameter and cropped data (#8572)'
+    );
+
+    const lineSeriesPoints = secondChart.series[2].points;
+
+    secondChart.addSeries({
+        id: 'volume',
+        data: [
+            [lineSeriesPoints[0].x, 1500],
+            [lineSeriesPoints[1].x, 2000]
+        ]
+    });
+
+    secondChart.addSeries({
+        linkedTo: 'aapl',
+        type: 'obv',
+        params: {
+            volumeSeriesID: 'volume'
+        },
+        yAxis: 0
+    });
+
+    secondChart.rangeSelector.clickButton(0);
+
+    assert.ok(
+        true,
+        'No volumeSeriesID error when cliked rangeSelector button, #18643'
+    );
+});
+
+QUnit.test('Order of series and indicators, #15892.', function (assert) {
+    const chart = Highcharts.stockChart('container', {
+        navigator: {
+            enabled: false
+        },
+        scrollbar: {
+            buttonsEnabled: true,
+            height: 14
+        },
+        series: [{
+            type: 'sma',
+            id: 'sma',
+            linkedTo: 'main',
+            params: {
+                period: 4
+            }
+        }, {
+            id: 'main',
+            data: [13, 14, 15, 13, 14, 15, 13, 14, 15]
+        }]
+    });
+
+    assert.strictEqual(
+        chart.series.length,
+        2, // main, sma
+        `When an indicator is declared before the main series,
+        both should be initialized.`
+    );
+    assert.ok(
+        chart.series[0].processedXData.length,
+        `When an indicator is declared before the main series,
+        indicator data should be procesed.`
+    );
+
+    chart.addSeries({
+        type: 'sma',
+        linkedTo: 'sma',
+        params: {
+            period: 4
+        }
+    });
+
+    chart.series[1].addPoint(16);
+
+    assert.strictEqual(
+        chart.series[2].points.length,
+        chart.series[0].points.length -
+            chart.series[2].options.params.period + 1,
+        `Indicator linked to another indicator should be recalculated after
+        adding a point to the main series #17190.`
+    );
+
+    chart.series[1].addPoint(5);
+    chart.series[1].addPoint(10);
+
+    assert.strictEqual(
+        chart.series[2].points.length,
+        6,
+        `After adding two points to the main series, indicator linked to another
+        indicator should also update its data #18689.`
     );
 });

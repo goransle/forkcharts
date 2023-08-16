@@ -1,8 +1,16 @@
-let chart;
-Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/world-population-density.json', function (data) {
+(async () => {
 
-    // Initiate the chart
-    chart = Highcharts.mapChart('container', {
+    const topology = await fetch(
+        'https://code.highcharts.com/mapdata/custom/world.topo.json'
+    ).then(response => response.json());
+
+    // Load the dataset
+    const data = await fetch(
+        'https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/world-population-density.json'
+    ).then(response => response.json());
+
+    // Initialize the chart
+    const chart = Highcharts.mapChart('container', {
 
         title: {
             text: 'Exporting scale demonstrated'
@@ -33,26 +41,22 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
 
         series: [{
             data: data,
-            mapData: Highcharts.maps['custom/world'],
+            mapData: topology,
             joinBy: ['iso-a2', 'code'],
             name: 'Population density',
-            states: {
-                hover: {
-                    color: '#a4edba'
-                }
-            },
             tooltip: {
                 valueSuffix: '/km²'
             }
         }]
     });
-});
 
-const expScale = scale => {
-    chart.exportChart({
-        scale: scale
-    });
-};
+    const expScale = scale => {
+        chart.exportChart({
+            scale: scale
+        });
+    };
 
-document.getElementById("scale-1").onclick = () => expScale(1);
-document.getElementById("scale-2").onclick = () => expScale(2);
+    document.getElementById('scale-1').onclick = () => expScale(1);
+    document.getElementById('scale-2').onclick = () => expScale(2);
+
+})();

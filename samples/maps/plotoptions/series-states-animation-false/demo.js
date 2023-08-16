@@ -1,6 +1,14 @@
-Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/world-population-density.json', function (data) {
+(async () => {
 
-    // Initiate the chart
+    const topology = await fetch(
+        'https://code.highcharts.com/mapdata/custom/world.topo.json'
+    ).then(response => response.json());
+
+    const data = await fetch(
+        'https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/world-population-density.json'
+    ).then(response => response.json());
+
+    // Initialize the chart
     Highcharts.mapChart('container', {
 
         title: {
@@ -26,7 +34,7 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
 
         series: [{
             data: data,
-            mapData: Highcharts.maps['custom/world'],
+            mapData: topology,
             joinBy: ['iso-a2', 'code'],
             name: 'Population density',
             states: {
@@ -42,4 +50,4 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
             }
         }]
     });
-});
+})();

@@ -1,4 +1,4 @@
-var data = [{
+const data = [{
     id: '0.0',
     parent: '',
     name: 'The World'
@@ -355,7 +355,7 @@ var data = [{
     value: 1367254
 },
 
-/***********/
+/** *********/
 
 /* America */
 {
@@ -654,7 +654,7 @@ var data = [{
     name: 'Montserrat',
     value: 5177
 },
-/***********/
+/** *********/
 
 /* Asia */
 {
@@ -947,7 +947,7 @@ var data = [{
     name: 'Turkmenistan',
     value: 5758075
 },
-/***********/
+/** *********/
 
 /* Europe */
 {
@@ -1226,7 +1226,7 @@ var data = [{
     name: 'Liechtenstein',
     value: 37922
 },
-/***********/
+/** *********/
 
 /* Oceania */
 {
@@ -1375,9 +1375,6 @@ var data = [{
     value: 1300
 }];
 
-// Splice in transparent for the center circle
-Highcharts.getOptions().colors.splice(0, 0, 'transparent');
-
 
 Highcharts.chart('container', {
 
@@ -1385,16 +1382,23 @@ Highcharts.chart('container', {
         height: '100%'
     },
 
+    // Let the center circle be transparent
+    colors: ['transparent'].concat(Highcharts.getOptions().colors),
+
     title: {
         text: 'World population 2017'
     },
+
     subtitle: {
         text: 'Source <a href="https://en.wikipedia.org/wiki/List_of_countries_by_population_(United_Nations)">Wikipedia</a>'
     },
+
     series: [{
         type: 'sunburst',
         data: data,
+        name: 'Root',
         allowDrillToNode: true,
+        borderRadius: 3,
         cursor: 'pointer',
         dataLabels: {
             format: '{point.name}',
@@ -1402,8 +1406,7 @@ Highcharts.chart('container', {
                 property: 'innerArcLength',
                 operator: '>',
                 value: 16
-            },
-            rotationMode: 'circular'
+            }
         },
         levels: [{
             level: 1,
@@ -1434,6 +1437,7 @@ Highcharts.chart('container', {
         }]
 
     }],
+
     tooltip: {
         headerFormat: '',
         pointFormat: 'The population of <b>{point.name}</b> is <b>{point.value}</b>'

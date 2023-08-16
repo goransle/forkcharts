@@ -78,8 +78,8 @@ QUnit.test('Text word wrap with a long word (#3158)', function (assert) {
             100
         )
         .css({
-            width: width + 'px',
-            color: '#003399'
+            fontSize: '12px',
+            width: width + 'px'
         })
         .add();
 
@@ -120,6 +120,7 @@ QUnit.test('Text word wrap with markup', function (assert) {
             40
         )
         .css({
+            fontSize: '12px',
             width: width + 'px'
         })
         .add();
@@ -141,6 +142,15 @@ QUnit.test('Text word wrap with markup', function (assert) {
             'The text node width should be less than 100'
         );
     }
+
+    text.attr({
+        text: '<a href="https://www.highcharts.com">The quick brown fox jumps over the lazy dog</a>'
+    });
+
+    assert.ok(
+        text.getBBox().width <= 100,
+        'Text directly inside anchor should be wrapped (#16173)'
+    );
 });
 
 QUnit.module('whiteSpace: "nowrap"', hooks => {
@@ -412,7 +422,7 @@ QUnit.test('BBox for mulitiple lines', function (assert) {
         assert.strictEqual(
             lab.element.getAttribute('dy'),
             null,
-            "First line shouldn't have dy (#6144) - visually the red text fits in the green box."
+            'First line shouldn\'t have dy (#6144) - visually the red text fits in the green box.'
         );
 
         const txt = renderer
@@ -462,7 +472,7 @@ QUnit.test('HTML', function (assert) {
         assert.strictEqual(
             text.element.textContent,
             'a < b and c > d',
-            "Tags don't start with spaces (#7126)"
+            'Tags don\'t start with spaces (#7126)'
         );
 
         var html = renderer.text('useHTML', 100, 100, true).add();
@@ -526,6 +536,51 @@ QUnit.test('HTML', function (assert) {
             text.element.style.width,
             '',
             'The style width should be removed when setting to undefined'
+        );
+
+        document.getElementById('container').style.position = 'relative';
+        text = renderer
+            .text(
+                'LooooooooooooooooooooooooooooooooooooongText',
+                0,
+                10,
+                true
+            )
+            .css({
+                width: '50px',
+                textOverflow: 'ellipsis'
+            })
+            .add();
+        assert.ok(
+            text.getBBox().width <= 50,
+            'When potentially overflowing, the box should be restrained'
+        );
+
+        text.css({ width: '600px' });
+        assert.ok(
+            text.getBBox().width < 500,
+            'When not overflowing, the bounding box should not extend to the CSS width (#16261)'
+        );
+
+
+        renderer = new Highcharts.SVGRenderer(
+            document.getElementById('container'),
+            500,
+            500,
+            void 0,
+            true
+        );
+
+        text = renderer.text('Line<br>break', 0, 10, true)
+            .add()
+            .attr({
+                x: 10
+            });
+
+        assert.strictEqual(
+            text.element.querySelector('tspan').getAttribute('x'),
+            '10',
+            '#16062: tspan breaks should have correct x when exporting useHTML=true text with allowHTML=false'
         );
     } finally {
         renderer.destroy();
@@ -592,7 +647,7 @@ QUnit.test('Attributes', function (assert) {
 
         text = renderer
             .text(
-                "The quick brown fox jumps <span class='red'>over</span> the lazy dog",
+                'The quick brown fox jumps <span class=\'red\'>over</span> the lazy dog',
                 20,
                 20
             )
@@ -625,7 +680,7 @@ QUnit.test('Text height', function (assert) {
         });
 
         assert.strictEqual(
-            renderer.fontMetrics(fontSize, label.element).f,
+            renderer.fontMetrics(label.element).f,
             parseInt(window.innerWidth / 50, 10),
             'Font size in vw'
         );
@@ -635,8 +690,8 @@ QUnit.test('Text height', function (assert) {
             fontSize: fontSize
         });
         assert.strictEqual(
-            renderer.fontMetrics(fontSize, label.element).f,
-            24,
+            renderer.fontMetrics(label.element).f,
+            32,
             'Font size in em'
         );
 
@@ -645,7 +700,7 @@ QUnit.test('Text height', function (assert) {
             fontSize: fontSize
         });
         assert.strictEqual(
-            renderer.fontMetrics(fontSize, label.element).f,
+            renderer.fontMetrics(label.element).f,
             32,
             'Font size in rem'
         );
@@ -655,9 +710,9 @@ QUnit.test('Text height', function (assert) {
             fontSize: fontSize
         });
         assert.strictEqual(
-            renderer.fontMetrics(fontSize, label.element).f,
-            24,
-            'Font size in %'
+            renderer.fontMetrics(label.element).f,
+            32,
+            'Font size in percent'
         );
 
         const textLabel = renderer.text('Firefox/IE clean', 10, 30).add();
@@ -718,7 +773,11 @@ QUnit.test('Adding new text style (#3501)', function (assert) {
         var rectWidth = rect.element.getBBox().width,
             textWidth = txt.element.getBBox().width;
 
-        assert.ok(rectWidth > textWidth, 'The text width is not respected');
+        assert.ok(
+            Math.floor(textWidth) <= Math.floor(rectWidth),
+            'The text should not be greater than the rect ' +
+                `(text: ${textWidth}, rect: ${rectWidth})`
+        );
     } finally {
         renderer.destroy();
     }
@@ -789,4 +848,81 @@ QUnit.test('RTL characters with outline (#10162)', function (assert) {
     } finally {
         renderer.destroy();
     }
+});
+
+
+QUnit.test('textPath', assert => {
+    const ren = new Highcharts.Renderer(
+        document.getElementById('container'),
+        600,
+        400
+    );
+
+    const path = ren
+        .path([
+            ['M', 50, 50],
+            ['L', 550, 350]
+        ])
+        .attr({
+            stroke: 'blue',
+            'stroke-width': 2
+        })
+        .add();
+
+    const text = ren
+        .text('Hello path', 20, 20)
+        .setTextPath(path, {})
+        .add();
+
+    const textPathHref = text.element.querySelector('textPath')
+        .getAttribute('href');
+    assert.ok(
+        textPathHref,
+        'A `textPath` element should be present'
+    );
+
+    text.attr({
+        text: 'Hello updated path'
+    });
+
+    assert.strictEqual(
+        text.element.querySelector('textPath').getAttribute('href'),
+        textPathHref,
+        'The textPath should be preserved after modifying the text'
+    );
+
+    text.setTextPath(undefined, { attributes: { dy: 20 } });
+
+    assert.strictEqual(
+        text.element.querySelector('textPath').getAttribute('href'),
+        textPathHref,
+        'The textPath should be preserved after modifying options'
+    );
+    assert.strictEqual(
+        text.element.getAttribute('dy'),
+        '20',
+        'The text path options should be updated'
+    );
+
+    text.css({
+        width: '100px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
+    });
+    assert.ok(
+        text.element.textContent.indexOf('\u2026') !== -1,
+        'Width set, the text should have an ellipsis'
+    );
+
+    text.css({
+        width: 'auto',
+        overflow: 'auto',
+        textOverflow: 'none'
+    });
+    assert.ok(
+        text.element.textContent.indexOf('\u2026') === -1,
+        'Width unset, the text should not have an ellipsis'
+    );
+
+    ren.destroy();
 });

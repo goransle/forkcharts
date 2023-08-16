@@ -6,5 +6,7 @@ js_wrap: b
 tags:
   - Highcharts Stock demo
 categories:
-  - Flags and Technical indicators
+  - Flags and Technical indicators:
+      priority: 3
+use_png_thumbnail: true
 ...

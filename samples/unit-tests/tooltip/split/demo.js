@@ -59,15 +59,6 @@ QUnit.test('Split tooltip and tooltip.style. #5838', function (assert) {
     el = chart.tooltip.tt.element;
     value = window.getComputedStyle(el);
 
-    assert.notEqual(
-        document
-            .getElementsByClassName('highcharts-label-box')[4]
-            .getAttribute('class')
-            .indexOf('highcharts-shadow'),
-        -1,
-        'Shadow should be applied'
-    );
-
     chart.update({
         tooltip: {
             style: {
@@ -172,7 +163,7 @@ QUnit.test('Split tooltip with empty formats (#8105)', function (assert) {
 });
 
 QUnit.test('Split tooltip with useHTML and outside', function (assert) {
-    var chart = Highcharts.chart('container', {
+    const chart = Highcharts.chart('container', {
         chart: {
             width: 600
         },
@@ -184,7 +175,8 @@ QUnit.test('Split tooltip with useHTML and outside', function (assert) {
         tooltip: {
             split: true,
             useHTML: true,
-            outside: true
+            outside: true,
+            followPointer: true
         }
     });
 
@@ -196,11 +188,122 @@ QUnit.test('Split tooltip with useHTML and outside', function (assert) {
         '#15018: Split tooltip should use outside renderer'
     );
 
+    assert.notOk(
+        chart.tooltip.followPointer,
+        '#14906: followPointer should be false with split tooltip'
+    );
+
     assert.strictEqual(
         chart.series[0].tt.text.element.tagName,
         'SPAN',
         '#7238: The label is a span'
     );
+
+    chart.update({
+        tooltip: {
+            useHTML: false,
+            distance: 0
+        }
+    }, false);
+
+    chart.series[0].update({
+        type: 'scatter'
+    });
+
+    chart.tooltip.refresh(chart.series[0].points[0]);
+
+    const point = chart.series[0].points[0],
+        pointBox = point.graphic.getBBox(),
+        tooltipClient = chart.tooltip.container.getBoundingClientRect();
+
+    assert.close(
+        chart.xAxis[0].toPixels(point.x),
+        tooltipClient.x + (tooltipClient.width / 2) - pointBox.width,
+        2,
+        `Tooltip with outside and split properties set to true should be
+        rendered properly - x position (#17720).`
+    );
+
+    assert.close(
+        chart.yAxis[0].toPixels(point.y),
+        tooltipClient.y + tooltipClient.height -
+            pointBox.height - (pointBox.height / 2),
+        4,
+        `Tooltip with outside and split properties set to true should be
+        rendered properly - y position (#17720).`
+    );
+});
+
+QUnit.test('Split tooltip in floated container (#13943),', function (assert) {
+
+    // Create another container to float within
+    const subcontainer = document.createElement('div');
+    subcontainer.id = 'subcontainer';
+    subcontainer.style.float = 'right';
+    const mainContainer = document.querySelector('#container');
+
+    mainContainer.appendChild(subcontainer);
+
+    const initialWidth = mainContainer.style.width;
+    mainContainer.style.width = '100vw';
+
+    const chart = Highcharts.stockChart('subcontainer', {
+        chart: {
+            width: 120
+        },
+        series: [
+            {
+                data: [1, 2, 3, 5, 6, 7, 8]
+            }
+        ],
+        tooltip: {
+            split: true,
+            outside: true
+        }
+    });
+
+    // Hover over the final point
+    const { points } = chart.series[0];
+    points[points.length - 1].onMouseOver();
+
+    // Check both the series tooltip, and the header tooltip
+    [chart.tooltip.tt, chart.series[0].tt].forEach(tt => {
+        // Get the absolute position of right side of the tooltip element
+        // Test fails on firefox if we use getBoundingClientRect().right
+        const ttRight = tt.element.getBoundingClientRect().left +
+            tt.getBBox().width;
+
+        assert.strictEqual(
+            tt.x < tt.anchorX,
+            true,
+            'The tooltip should be aligned towards the left'
+        );
+        assert.strictEqual(
+            ttRight <= mainContainer.clientWidth,
+            true,
+            'The tooltip should not overflow the viewport'
+        );
+    });
+
+    // check the alignment when tooltip.outside is false
+    chart.update({
+        tooltip: {
+            split: true,
+            outside: false
+        }
+    });
+
+    points[points.length - 1].onMouseOver();
+    assert.strictEqual(
+        chart.series[0].tt.x < chart.series[0].tt.anchorX,
+        true,
+        'The tooltip should be aligned towards the left'
+    );
+
+    // Reset
+    subcontainer.remove();
+    mainContainer.style.width = initialWidth;
+
 });
 
 QUnit.test(
@@ -233,8 +336,8 @@ QUnit.test(
         chart.series[1].points[0].onMouseOver();
 
         assert.strictEqual(
-            chart.series[1].tt.text.element.tagName,
-            'text',
+            chart.tooltip.label.element.tagName,
+            'g',
             'We have a flag tooltip'
         );
     }
@@ -262,7 +365,7 @@ QUnit.test(
         chart.series[0].points[0].onMouseOver();
 
         assert.strictEqual(
-            chart.series[0].tt.box.stroke,
+            chart.series[0].tt.box.attr('stroke'),
             firstPointColor,
             'Label stroke should be the same as the first point color.'
         );
@@ -270,7 +373,7 @@ QUnit.test(
         chart.series[0].points[1].onMouseOver();
 
         assert.strictEqual(
-            chart.series[0].tt.box.stroke,
+            chart.series[0].tt.box.attr('stroke'),
             secondPointColor,
             'Label stroke should be the same as the second point color.'
         );

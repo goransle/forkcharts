@@ -42,9 +42,7 @@ QUnit.test('Bindings general tests', function (assert) {
     // CSS Styles are not loaded, so hide left bar. If we don't hide the bar,
     // chart will be rendered outside the visible page and events will not be
     // fired (TestController issue)
-    document.getElementsByClassName(
-        'highcharts-stocktools-wrapper'
-    )[0].style.display = 'none';
+    chart.stockTools.wrapper.style.display = 'none';
 
     // Number of tests is so high that events are not triggered on a chart,
     // temporary hide it:
@@ -72,77 +70,109 @@ QUnit.test('Bindings general tests', function (assert) {
         );
     }
 
-    // Annotations with multiple steps:
-    Highcharts.each(
-        [
-            'circle-annotation',
-            'rectangle-annotation',
-            'segment',
-            'arrow-segment',
-            'ray',
-            'arrow-ray',
-            'infinity-line',
-            'arrow-infinity-line',
-            'crooked3',
-            'crooked5',
-            'elliott3',
-            'elliott5',
-            'pitchfork',
-            'fibonacci',
-            'parallel-channel',
-            'measure-xy',
-            'measure-y',
-            'measure-x'
-        ],
-        function (name) {
-            selectButton(name);
-            // Start and steps: annotations, run each step
-            controller.click(
-                points[2].plotX + plotLeft - 5,
-                points[2].plotY + plotTop - 5
-            );
-            Highcharts.each(
-                chart.navigationBindings.boundClassNames['highcharts-' + name]
-                    .steps,
-                function (step, index) {
-                    controller.click(
-                        points[4 + index].plotX + plotLeft - 5,
-                        points[4 + index].plotY + plotTop - 5
-                    );
+    const verticalAnnotation = chart.addAnnotation({
+            type: 'verticalLine',
+            typeOptions: {
+                point: {
+                    xAxis: 0,
+                    yAxis: 0,
+                    x: 5,
+                    y: 15
                 }
-            );
+            }
+        }),
+        { x, y } = verticalAnnotation.shapes[0].graphic.getBBox();
 
-            assert.strictEqual(
-                chart.annotations.length,
-                ++annotationsCounter,
-                'Annotation: ' + name + ' added without errors.'
-            );
-        }
+    controller.mouseDown(
+        plotLeft + x - 10,
+        plotTop + y - 15
     );
+
+    controller.mouseMove(
+        plotLeft + 100,
+        plotTop + 100
+    );
+
+    controller.mouseUp();
+
+    selectButton('save-chart');
+
+    const annotationStorage = localStorage.getItem('highcharts-chart');
+
+    assert.deepEqual(
+        JSON.parse(annotationStorage).annotations[0].typeOptions,
+        verticalAnnotation.userOptions.typeOptions,
+        'Annotation position saves correctly in localStorage after drag and drop'
+    );
+
+    verticalAnnotation.destroy();
+    chart.annotations.length = 0;
+
+    localStorage.removeItem('highcharts-chart');
+
+    // Annotations with multiple steps:
+    [
+        'circle-annotation',
+        'rectangle-annotation',
+        'ellipse-annotation',
+        'segment',
+        'arrow-segment',
+        'ray',
+        'arrow-ray',
+        'infinity-line',
+        'arrow-infinity-line',
+        'crooked3',
+        'crooked5',
+        'elliott3',
+        'elliott5',
+        'pitchfork',
+        'fibonacci',
+        'parallel-channel',
+        'measure-xy',
+        'measure-y',
+        'measure-x'
+    ].forEach(name => {
+        selectButton(name);
+        // Start and steps: annotations, run each step
+        controller.click(
+            points[2].plotX + plotLeft - 5,
+            points[2].plotY + plotTop - 5
+        );
+        chart.navigationBindings.boundClassNames['highcharts-' + name].steps
+            .forEach((_, index) => {
+                controller.click(
+                    points[4 + index].plotX + plotLeft - 5,
+                    points[4 + index].plotY + plotTop - 5
+                );
+            });
+
+        assert.strictEqual(
+            chart.annotations.length,
+            ++annotationsCounter,
+            'Annotation: ' + name + ' added without errors.'
+        );
+    });
 
     // Annotations with just one "start" event:
-    Highcharts.each(
-        [
-            'label-annotation',
-            'vertical-line',
-            'horizontal-line',
-            'vertical-counter',
-            'vertical-label',
-            'vertical-arrow'
-            // 'vertical-double-arrow'
-        ],
-        function (name) {
-            selectButton(name);
+    [
+        'label-annotation',
+        'vertical-line',
+        'horizontal-line',
+        'vertical-counter',
+        'vertical-label',
+        'vertical-arrow'
+        // 'vertical-double-arrow'
+    ].forEach(name => {
+        selectButton(name);
 
-            controller.click(points[2].plotX, points[2].plotY);
+        controller.click(points[2].plotX, points[2].plotY);
 
-            assert.strictEqual(
-                chart.annotations.length,
-                ++annotationsCounter,
-                'Annotation: ' + name + ' added without errors.'
-            );
-        }
-    );
+        assert.strictEqual(
+            chart.annotations.length,
+            ++annotationsCounter,
+            'Annotation: ' + name + ' added without errors.'
+        );
+    });
 
     // Test control points, measure-y annotation
     controller.click(
@@ -171,7 +201,7 @@ QUnit.test('Bindings general tests', function (assert) {
         chart.annotations[16].yAxisMax,
         chart.yAxis[0].toValue(chart.plotHeight / 2 + 10),
         1,
-        "Annotation should updated after control point's drag&drop (#12459)"
+        'Annotation should updated after control point\'s drag&drop (#12459)'
     );
 
     // Individual button events:
@@ -181,12 +211,12 @@ QUnit.test('Bindings general tests', function (assert) {
     assert.strictEqual(
         chart.series[0].lastVisiblePrice &&
             chart.series[0].lastVisiblePrice.visibility,
-        'visible',
+        'inherit',
         'Last price in the range visible.'
     );
     assert.strictEqual(
         chart.series[0].lastPrice && chart.series[0].lastPrice.visibility,
-        'visible',
+        'inherit',
         'Last price in the dataset visible.'
     );
 
@@ -208,7 +238,7 @@ QUnit.test('Bindings general tests', function (assert) {
     // Hide all:
     selectButton('toggle-annotations');
 
-    Highcharts.each(chart.annotations, function (annotation) {
+    chart.annotations.forEach(annotation => {
         if (annotation.options.visible) {
             visibleAnnotations = true;
         }
@@ -224,7 +254,7 @@ QUnit.test('Bindings general tests', function (assert) {
     selectButton('toggle-annotations');
 
     visibleAnnotations = true;
-    Highcharts.each(chart.annotations, function (annotation) {
+    chart.annotations.forEach(annotation => {
         if (!annotation.options.visible) {
             visibleAnnotations = false;
         }
@@ -237,7 +267,7 @@ QUnit.test('Bindings general tests', function (assert) {
     );
 
     // Series types change:
-    Highcharts.each(['line', 'ohlc', 'candlestick'], function (type) {
+    ['line', 'ohlc', 'candlestick'].forEach(type => {
         selectButton('series-type-' + type);
         assert.strictEqual(
             chart.series[0].type,
@@ -530,6 +560,21 @@ QUnit.test(
             coordsY.axis.options.id,
             'bottomYAxis',
             'Y coord on the bottom yAxis - the bottom yAxis should be found.'
+        );
+
+        chart.yAxis[0].update({
+            type: 'logarithmic'
+        });
+
+        const cords = [{
+            axis: chart.yAxis[0],
+            value: 2.2
+        }];
+
+        assert.ok(
+            getAssignedAxis(cords),
+            `The getAssignedAxis method should also work
+            for logarithmic axes, #16451.`
         );
     });
 

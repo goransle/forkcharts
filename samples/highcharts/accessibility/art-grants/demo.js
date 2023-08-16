@@ -25,8 +25,7 @@ Highcharts.chart('container', {
             seriesNavigation: {
                 mode: 'serialize'
             }
-        },
-        landmarkVerbosity: 'one'
+        }
     },
 
     title: {
@@ -80,6 +79,10 @@ Highcharts.chart('container', {
 
     credits: {
         enabled: false
+    },
+
+    tooltip: {
+        stickOnContact: true
     },
 
     plotOptions: {

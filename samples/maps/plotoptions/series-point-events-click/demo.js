@@ -1,6 +1,14 @@
-Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/world-population-density.json', function (data) {
+(async () => {
 
-    // Initiate the chart
+    const topology = await fetch(
+        'https://code.highcharts.com/mapdata/custom/world.topo.json'
+    ).then(response => response.json());
+
+    const data = await fetch(
+        'https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/world-population-density.json'
+    ).then(response => response.json());
+
+    // Initialize the chart
     Highcharts.mapChart('container', {
 
         title: {
@@ -19,10 +27,11 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
                     events: {
                         click: function () {
                             var text = '<b>Clicked point</b><br>Series: ' + this.series.name +
-                                    '<br>Point: ' + this.name + ' (' + this.value + '/km²)',
+                                        '<br>Point: ' + this.name + ' (' + this.value + '/km²)',
                                 chart = this.series.chart;
                             if (!chart.clickLabel) {
-                                chart.clickLabel = chart.renderer.label(text, 0, 250)
+                                chart.clickLabel = chart.renderer
+                                    .label(text, 0, 250)
                                     .css({
                                         width: '180px'
                                     })
@@ -40,18 +49,13 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
 
         series: [{
             data: data,
-            mapData: Highcharts.maps['custom/world'],
+            mapData: topology,
             joinBy: ['iso-a2', 'code'],
             name: 'Population density',
             pointer: 'cursor',
-            states: {
-                hover: {
-                    color: '#a4edba'
-                }
-            },
             tooltip: {
                 valueSuffix: '/km²'
             }
         }]
     });
-});
+})();

@@ -25,16 +25,21 @@ import type {
 
 export interface LinearRegressionOptions extends SMAOptions {
     params?: LinearRegressionParamsOptions;
-    tooltip?: Highcharts.TooltipOptions;
 }
 
 export interface LinearRegressionParamsOptions extends SMAParamsOptions {
-    xAxisUnit?: number;
+    xAxisUnit?: null|number;
 }
 
 export interface RegressionLineParametersObject {
     slope: number;
     intercept: number;
 }
+
+/* *
+ *
+ * Default Export
+ *
+ * */
 
 export default LinearRegressionOptions;

@@ -14,12 +14,14 @@
  *
  * */
 
+import type BBoxObject from '../../Core/Renderer/BBoxObject';
 import type WaterfallPointOptions from './WaterfallPointOptions';
+import type WaterfallSeries from './WaterfallSeries';
+
 import ColumnSeries from '../Column/ColumnSeries.js';
 import Point from '../../Core/Series/Point.js';
-import WaterfallSeries from './WaterfallSeries';
-const { isNumber } = U;
 import U from '../../Core/Utilities.js';
+const { isNumber } = U;
 
 
 /* *
@@ -36,6 +38,8 @@ class WaterfallPoint extends ColumnSeries.prototype.pointClass {
      * */
     public below?: boolean;
 
+    public box?: BBoxObject;
+
     public isIntermediateSum?: boolean;
 
     public isSum?: boolean;
@@ -46,15 +50,13 @@ class WaterfallPoint extends ColumnSeries.prototype.pointClass {
 
     public series: WaterfallSeries = void 0 as any;
 
-    public y: any;
-
     /* *
      *
      * Functions
      *
      * */
     public getClassName(): string {
-        var className = Point.prototype.getClassName.call(this);
+        let className = Point.prototype.getClassName.call(this);
 
         if (this.isSum) {
             className += ' highcharts-sum';

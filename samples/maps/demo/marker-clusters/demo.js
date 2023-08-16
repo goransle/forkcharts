@@ -1,14 +1,25 @@
-Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@1e9e659c2d60fbe27ef0b41e2f93112dd68fb7a3/samples/data/european-train-stations-near-airports.json', function (data) {
+(async () => {
+
+    const topology = await fetch(
+        'https://code.highcharts.com/mapdata/custom/europe.topo.json'
+    ).then(response => response.json());
+
+    const data = await fetch(
+        'https://cdn.jsdelivr.net/gh/highcharts/highcharts@1e9e659c2d60fbe27ef0b41e2f93112dd68fb7a3/samples/data/european-train-stations-near-airports.json'
+    ).then(response => response.json());
+
     Highcharts.mapChart('container', {
         chart: {
-            map: 'custom/europe'
+            map: topology
         },
         title: {
-            text: 'European Train Stations Near Airports'
+            text: 'European Train Stations Near Airports',
+            align: 'left'
         },
         subtitle: {
             text: 'Source: <a href="https://github.com/trainline-eu/stations">' +
-                'github.com/trainline-eu/stations</a>'
+                    'github.com/trainline-eu/stations</a>',
+            align: 'left'
         },
         mapNavigation: {
             enabled: true
@@ -68,16 +79,39 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@1e9e659c2d
             }
         },
         series: [{
-            name: 'Basemap',
+            name: 'Europe',
+            accessibility: {
+                exposeAsGroupOnly: true
+            },
             borderColor: '#A0A0A0',
             nullColor: 'rgba(177, 244, 177, 0.5)',
             showInLegend: false
         }, {
             type: 'mappoint',
             enableMouseTracking: true,
+            accessibility: {
+                point: {
+                    descriptionFormat: '{#if isCluster}' +
+                            'Grouping of {clusterPointsAmount} points.' +
+                            '{else}' +
+                            '{name}, country code: {country}.' +
+                            '{/if}'
+                }
+            },
             colorKey: 'clusterPointsAmount',
             name: 'Cities',
-            data: data
+            data: data,
+            color: Highcharts.getOptions().colors[5],
+            marker: {
+                lineWidth: 1,
+                lineColor: '#fff',
+                symbol: 'mapmarker',
+                radius: 8
+            },
+            dataLabels: {
+                verticalAlign: 'top'
+            }
         }]
     });
-});
+
+})();

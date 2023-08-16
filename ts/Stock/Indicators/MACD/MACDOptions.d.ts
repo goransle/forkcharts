@@ -11,6 +11,8 @@
  *  Imports
  *
  * */
+
+import type ColorString from '../../../Core/Color/ColorString';
 import type MACDIndicator from './MACDIndicator';
 import type CSSObject from '../../../Core/Renderer/CSSObject';
 import type {
@@ -50,19 +52,27 @@ export interface MACDOptions extends SMAOptions {
     groupPadding?: number;
     pointPadding?: number;
     minPointLength?: number;
-    tooltip?: Highcharts.TooltipOptions;
     signalLine?: MACDLineOptions;
     macdLine?: MACDLineOptions;
 }
 
 export interface MACDLineOptions {
-    styles?: CSSObject;
+    styles?: MACDLineStyleOptions;
     zones?: Array<SeriesZonesOptions>;
+}
+export interface MACDLineStyleOptions extends CSSObject {
+    lineColor?: ColorString
 }
 
 export interface MACDZonesOptions {
     startIndex?: number;
     zones?: MACDLineOptions['zones'];
 }
+
+/* *
+*
+*  Default Export
+*
+* */
 
 export default MACDOptions;

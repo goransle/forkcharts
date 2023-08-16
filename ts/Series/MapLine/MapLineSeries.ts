@@ -57,14 +57,25 @@ class MapLineSeries extends MapSeries {
      *
      * @sample maps/demo/mapline-mappoint/
      *         Mapline and map-point chart
+     * @sample maps/demo/animated-mapline/
+     *         Mapline with CSS keyframe animation
+     * @sample maps/demo/flight-routes
+     *         Flight routes
      *
      * @extends      plotOptions.map
+     * @excluding    dragDrop
      * @product      highmaps
      * @optionparent plotOptions.mapline
      */
     public static defaultOptions: MapLineSeriesOptions = merge(MapSeries.defaultOptions, {
         /**
-         * The width of the map line.
+         * Pixel width of the mapline line.
+         *
+         * @type      {number}
+         * @since 10.3.3
+         * @product   highmaps
+         * @default   1
+         * @apioption plotOptions.mapline.lineWidth
          */
         lineWidth: 1,
 
@@ -73,7 +84,9 @@ class MapLineSeries extends MapSeries {
          *
          * @type {Highcharts.ColorString|Highcharts.GradientColorObject|Highcharts.PatternObject}
          */
-        fillColor: 'none'
+        fillColor: 'none',
+
+        legendSymbol: 'lineMarker'
     } as MapLineSeriesOptions);
 
     /* *
@@ -98,18 +111,14 @@ class MapLineSeries extends MapSeries {
 
     /**
      * Get presentational attributes
-     *
      * @private
      * @function Highcharts.seriesTypes.mapline#pointAttribs
-     * @param {Highcharts.Point} point
-     * @param {string} state
-     * @return {Highcharts.SVGAttributes}
      */
     public pointAttribs(
         point: MapLinePoint,
         state: StatesOptionsKey
     ): SVGAttributes {
-        var attr = MapSeries.prototype.pointAttribs.call(
+        const attr = MapSeries.prototype.pointAttribs.call(
             this,
             point,
             state
@@ -128,12 +137,12 @@ class MapLineSeries extends MapSeries {
 
 /* *
  *
- *  Prototype Properties
+ *  Class Prototype
  *
  * */
 
 interface MapLineSeries {
-    colorProp: string;
+    colorProp: 'stroke';
     pointAttrToOptions: Record<string, string>;
     pointClass: typeof MapLinePoint;
 }
@@ -142,8 +151,6 @@ extend(MapLineSeries.prototype, {
     type: 'mapline',
 
     colorProp: 'stroke',
-
-    drawLegendSymbol: Series.prototype.drawLegendSymbol,
 
     pointAttrToOptions: {
         'stroke': 'color',
@@ -184,7 +191,7 @@ export default MapLineSeries;
  * not specified, it is inherited from [chart.type](#chart.type).
  *
  * @extends   series,plotOptions.mapline
- * @excluding dataParser, dataURL, marker
+ * @excluding dataParser, dataURL, dragDrop, marker
  * @product   highmaps
  * @apioption series.mapline
  */
@@ -230,8 +237,36 @@ export default MapLineSeries;
  *  ```
  *
  * @type      {Array<number|Array<string,(number|null)>|null|*>}
+ * @extends   series.map.data
+ * @excluding drilldown
  * @product   highmaps
  * @apioption series.mapline.data
+ */
+
+/**
+ * Pixel width of the mapline line.
+ *
+ * @type      {number}
+ * @since 10.2.0
+ * @product   highmaps
+ * @apioption plotOptions.mapline.states.hover.lineWidth
+ */
+
+/**
+ * Pixel width of the mapline line.
+ *
+ * @type      {number|undefined}
+ * @since 10.3.3
+ * @product   highmaps
+ * @apioption series.mapline.data.lineWidth
+ */
+
+/**
+ *
+ * @type      {number}
+ * @product   highmaps
+ * @excluding borderWidth
+ * @apioption plotOptions.mapline.states.hover
  */
 
 ''; // adds doclets above to transpiled file

@@ -1,4 +1,12 @@
-Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/us-population-density.json', function (data) {
+(async () => {
+
+    const topology = await fetch(
+        'https://code.highcharts.com/mapdata/countries/us/us-all.topo.json'
+    ).then(response => response.json());
+
+    const data = await fetch(
+        'https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/us-population-density.json'
+    ).then(response => response.json());
 
     // Make codes uppercase to match the map data
     data.forEach(function (p) {
@@ -9,8 +17,7 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
     Highcharts.mapChart('container', {
 
         chart: {
-            map: 'countries/us/us-all',
-            borderWidth: 1
+            map: topology
         },
 
         title: {
@@ -48,6 +55,11 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
         },
 
         series: [{
+            accessibility: {
+                point: {
+                    valueDescriptionFormat: '{xDescription}, {point.value} people per square kilometer.'
+                }
+            },
             animation: {
                 duration: 1000
             },
@@ -64,4 +76,5 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
             }
         }]
     });
-});
+
+})();

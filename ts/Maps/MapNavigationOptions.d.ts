@@ -26,8 +26,13 @@ import type ButtonThemeObject from '../Core/Renderer/SVG/ButtonThemeObject';
  *  Declarations
  *
  * */
+declare module '../Core/Options' {
+    interface Options {
+        mapNavigation?: MapNavigationOptions;
+    }
+}
 
-export type ButtonRelativeToValue = ('plotBox'|'spacingBox');
+export type ButtonRelativeToValue = ('chart'|'plotBox'|'spacingBox');
 
 export interface MapNavigationButtonOptions {
     align?: AlignValue;
@@ -54,15 +59,6 @@ export interface MapNavigationOptions {
     enableMouseWheelZoom?: boolean;
     enableTouchZoom?: boolean;
     mouseWheelSensitivity?: number;
-}
-
-// @todo declare module
-declare global {
-    namespace Highcharts {
-        interface Options {
-            mapNavigation?: MapNavigationOptions;
-        }
-    }
 }
 
 export default MapNavigationOptions;

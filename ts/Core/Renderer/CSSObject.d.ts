@@ -36,13 +36,17 @@ export type CursorValue = (
 
 export interface CSSObject {
     // [key: string]: (boolean|number|string|undefined);
+    align?: string;
     'align-items'?: string;
+    '-ms-filter'?: string;
     '-ms-touch-action'?: string;
     '-ms-transform'?: string;
     '-o-transform'?: string;
     '-webkit-transform'?: string;
+    background?: string;
     backgroundColor?: ColorString;
     borderRadius?: number|string;
+    borderWidth?: number;
     border?: string|0;
     'border-radius'?: string;
     bottom?: string;
@@ -78,16 +82,18 @@ export interface CSSObject {
     overflow?: string;
     overflowX?: string;
     overflowY?: string;
+    outline?: string;
     padding?: number|string;
-    pointerEvents?: string;
     'pointer-events'?: string;
+    pointerEvents?: CSSObject['pointer-events'];
     position?: 'absolute'|'fixed'|'relative';
     right?: string;
     rotation?: number;
-    stroke?: ColorString;
-    strokeWidth?: (number|string);
+    stroke?: ColorType;
+    'stroke-width'?: (number|string);
+    strokeWidth?: CSSObject['stroke-width'];
     'text-align'?: AlignValue;
-    textAlign?: AlignValue;
+    textAlign?: CSSObject['text-align'];
     textDecoration?: string;
     textOverflow?: string;
     textOutline?: string;
@@ -99,8 +105,8 @@ export interface CSSObject {
     transition?: string;
     userSelect?: string;
     visibility?: 'hidden'|'inherit'|'visible';
-    whiteSpace?: string;
     'white-space'?: string;
+    whiteSpace?: CSSObject['white-space'];
     width?: string|0;
     WebkitBoxShadow?: string;
     WebkitOverflowScrolling?: string;
@@ -111,7 +117,7 @@ export interface CSSObject {
 
 /* *
  *
- *  Export
+ *  Default Export
  *
  * */
 

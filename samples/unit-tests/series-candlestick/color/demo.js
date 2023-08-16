@@ -28,8 +28,8 @@ QUnit.test('Candlestick series colors tests.', function (assert) {
 
             points.forEach(function (p) {
                 p.onMouseOver();
-                stroke = split ? chart.tooltip.label.element.lastChild.childNodes[3].getAttribute('stroke') :
-                    chart.tooltip.label.stroke;
+                stroke = split ? chart.tooltip.label.element.lastChild.childNodes[0].getAttribute('stroke') :
+                    chart.tooltip.label.attr('stroke');
                 strokes.push(stroke);
             });
 
@@ -102,5 +102,17 @@ QUnit.test('Candlestick series colors tests.', function (assert) {
         getTooltipStrokes(chart, chart.series[0].points, true),
         [upColor, color, upColor, negativeColor],
         'Split tooltip should have appropriate stroke color for default, up and negative point (#14826).'
+    );
+
+    points[0].update([3, 5.5, 6, 3, 4.5]);
+    assert.strictEqual(
+        points[0].graphic.attr('fill'),
+        color,
+        '#15849: Point fill should use series color after updating from up to down'
+    );
+    assert.strictEqual(
+        points[0].color,
+        color,
+        '#15849: Point should use series color after updating from up to down'
     );
 });

@@ -1,7 +1,10 @@
-Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/world-mortality.json', function (data) {
+(async () => {
 
-    var points = [],
-        regionP,
+    const data = await fetch(
+        'https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/world-mortality.json'
+    ).then(response => response.json());
+
+    let regionP,
         regionVal,
         regionI = 0,
         countryP,
@@ -10,7 +13,9 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
         causeI,
         region,
         country,
-        cause,
+        cause;
+
+    const points = [],
         causeName = {
             'Communicable & other Group I': 'Communicable diseases',
             'Noncommunicable diseases': 'Non-communicable diseases',
@@ -18,7 +23,7 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
         };
 
     for (region in data) {
-        if (data.hasOwnProperty(region)) {
+        if (Object.hasOwnProperty.call(data, region)) {
             regionVal = 0;
             regionP = {
                 id: 'id_' + regionI,
@@ -27,7 +32,7 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
             };
             countryI = 0;
             for (country in data[region]) {
-                if (data[region].hasOwnProperty(country)) {
+                if (Object.hasOwnProperty.call(data[region], country)) {
                     countryP = {
                         id: regionP.id + '_' + countryI,
                         name: country,
@@ -36,7 +41,9 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
                     points.push(countryP);
                     causeI = 0;
                     for (cause in data[region][country]) {
-                        if (data[region][country].hasOwnProperty(cause)) {
+                        if (Object.hasOwnProperty.call(
+                            data[region][country], cause
+                        )) {
                             causeP = {
                                 id: countryP.id + '_' + causeI,
                                 name: causeName[cause],
@@ -58,6 +65,7 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
     }
     Highcharts.chart('container', {
         series: [{
+            name: 'Regions',
             type: 'treemap',
             layoutAlgorithm: 'squarified',
             allowDrillToNode: true,
@@ -65,22 +73,33 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
             dataLabels: {
                 enabled: false
             },
-            levelIsConstant: false,
             levels: [{
                 level: 1,
                 dataLabels: {
                     enabled: true
                 },
-                borderWidth: 3
+                borderWidth: 3,
+                levelIsConstant: false
+            }, {
+                level: 1,
+                dataLabels: {
+                    style: {
+                        fontSize: '14px'
+                    }
+                }
             }],
+            accessibility: {
+                exposeAsGroupOnly: true
+            },
             data: points
         }],
         subtitle: {
-            text: 'Click points to drill down. Source: <a href="http://apps.who.int/gho/data/node.main.12?lang=en">WHO</a>.'
+            text: 'Click points to drill down. Source: <a href="http://apps.who.int/gho/data/node.main.12?lang=en">WHO</a>.',
+            align: 'left'
         },
         title: {
-            text: 'Global Mortality Rate 2012, per 100 000 population'
+            text: 'Global Mortality Rate 2012, per 100 000 population',
+            align: 'left'
         }
     });
-
-});
+})();

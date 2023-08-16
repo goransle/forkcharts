@@ -1,7 +1,7 @@
 QUnit.test('Element.on', function (assert) {
     var renderer = new Highcharts.Renderer($('#container')[0], 400, 300),
         rectSvgElement = renderer
-            .rect(100, 100, 100, 100, 5)
+            .rect(100, 100, 100, 100)
             .attr({
                 'stroke-width': 2,
                 stroke: 'gray',
@@ -32,7 +32,7 @@ QUnit.test('Element.on', function (assert) {
         );
 
         // Start transforming
-        rectNodeElement.onclick();
+        Highcharts.fireEvent(rectNodeElement, 'click');
 
         assert.strictEqual(
             rectNodeElement.getAttribute('width'),

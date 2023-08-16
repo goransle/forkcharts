@@ -1,7 +1,12 @@
-Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/large-dataset.json', function (data) {
+(async () => {
+
+    // Load the dataset
+    const data = await fetch(
+        'https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/large-dataset.json'
+    ).then(response => response.json());
 
     // Create a timer
-    var start = +new Date();
+    const start = +new Date();
 
     // Create the chart
     Highcharts.stockChart('container', {
@@ -54,11 +59,13 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
         },
 
         title: {
-            text: 'Hourly temperatures in Vik i Sogn, Norway, 2009-2017'
+            text: 'Hourly temperatures in Vik i Sogn, Norway, 2009-2017',
+            align: 'left'
         },
 
         subtitle: {
-            text: 'Built chart in ...' // dummy text to reserve space for dynamic subtitle
+            text: 'Built chart in ...', // placeholder text to reserve space for dynamic subtitle
+            align: 'left'
         },
 
         series: [{
@@ -73,4 +80,5 @@ Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/sam
         }]
 
     });
-});
+
+})();

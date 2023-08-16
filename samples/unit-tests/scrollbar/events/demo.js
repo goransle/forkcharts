@@ -41,11 +41,11 @@ QUnit.test(
 
         controller.pan([x, y], [x + 90, y]);
 
-        // No lolex should be needed for this
+        // No lolex should be needed for this. 6ms to be sure in CI.
         setTimeout(function () {
             assert.strictEqual(counter, 1, 'afterSetExtremes called just once');
             done();
-        }, 5);
+        }, 6);
     }
 );
 
@@ -64,6 +64,9 @@ QUnit.test(
                 rangeSelector: {
                     enabled: false
                 },
+                scrollbar: {
+                    buttonsEnabled: true
+                },
                 series: [
                     {
                         data: [4, 20, 100, 5, 2, 33, 12, 23]
@@ -78,7 +81,7 @@ QUnit.test(
 
         controller.click(group.translateX + 5, group.translateY + 5);
 
-        // No lolex should be needed for this
+        // No lolex should be needed for this. 6ms to be sure in CI.
         setTimeout(function () {
             extremes = chart.xAxis[0].getExtremes();
             assert.strictEqual(
@@ -87,7 +90,7 @@ QUnit.test(
                 'Scrollbar moved to the left'
             );
             done();
-        }, 5);
+        }, 6);
     }
 );
 
@@ -142,7 +145,7 @@ QUnit.test('Scrollbar.liveRedraw option', function (assert) {
     );
 });
 
-QUnit.test('#14193: Scrollbar touch', assert => {
+QUnit.test('Scrollbar events', assert => {
     const { hasTouch, isTouchDevice } = Highcharts;
     Highcharts.hasTouch = Highcharts.isTouchDevice = true;
 
@@ -212,8 +215,31 @@ QUnit.test('#14193: Scrollbar touch', assert => {
         [bar.translateX + 100, bar.translateY + 5]
     );
 
-    assert.ok(axis.min > min, 'Extremes should have changed');
+    assert.ok(axis.min > min, 'Extremes should have changed (#14193)');
 
     Highcharts.hasTouch = hasTouch;
     Highcharts.isTouchDevice = isTouchDevice;
+
+    // #18922, scrollbar track did not catch click events
+    controller.click(bar.translateX + 5, bar.translateY + 5);
+    assert.ok(axis.min === min, 'Extremes should change on track click (#18922');
+
+    // #17977, scrollbar should not animate if global animation is disabled
+    const scrollbar = axis.scrollbar;
+
+    chart.update({
+        chart: {
+            animation: false
+        }
+    });
+    controller.click(
+        bar.translateX + bar.getBBox().width - 10,
+        bar.translateY + 5
+    );
+    assert.strictEqual(
+        scrollbar.scrollbarGroup.translateX,
+        scrollbar.width - scrollbar.scrollbar.attr('width'),
+        `Scrollbar should not animate if the global animation is disabled
+        (#17977)`
+    );
 });

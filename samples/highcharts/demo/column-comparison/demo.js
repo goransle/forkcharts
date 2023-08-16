@@ -1,163 +1,191 @@
-var dataPrev = {
+const dataPrev = {
+    2020: [
+        ['kr', 9],
+        ['jp', 12],
+        ['au', 8],
+        ['de', 17],
+        ['ru', 19],
+        ['cn', 26],
+        ['gb', 27],
+        ['us', 46]
+    ],
     2016: [
-        ['South Korea', 0],
-        ['Japan', 0],
-        ['Australia', 0],
-        ['Germany', 11],
-        ['Russia', 24],
-        ['China', 38],
-        ['Great Britain', 29],
-        ['United States', 46]
+        ['kr', 13],
+        ['jp', 7],
+        ['au', 8],
+        ['de', 11],
+        ['ru', 20],
+        ['cn', 38],
+        ['gb', 29],
+        ['us', 47]
     ],
     2012: [
-        ['South Korea', 13],
-        ['Japan', 0],
-        ['Australia', 0],
-        ['Germany', 0],
-        ['Russia', 22],
-        ['China', 51],
-        ['Great Britain', 19],
-        ['United States', 36]
+        ['kr', 13],
+        ['jp', 9],
+        ['au', 14],
+        ['de', 16],
+        ['ru', 24],
+        ['cn', 48],
+        ['gb', 19],
+        ['us', 36]
     ],
     2008: [
-        ['South Korea', 0],
-        ['Japan', 0],
-        ['Australia', 0],
-        ['Germany', 13],
-        ['Russia', 27],
-        ['China', 32],
-        ['Great Britain', 9],
-        ['United States', 37]
+        ['kr', 9],
+        ['jp', 17],
+        ['au', 18],
+        ['de', 13],
+        ['ru', 29],
+        ['cn', 33],
+        ['gb', 9],
+        ['us', 37]
     ],
     2004: [
-        ['South Korea', 0],
-        ['Japan', 5],
-        ['Australia', 16],
-        ['Germany', 0],
-        ['Russia', 32],
-        ['China', 28],
-        ['Great Britain', 0],
-        ['United States', 36]
+        ['kr', 8],
+        ['jp', 5],
+        ['au', 16],
+        ['de', 13],
+        ['ru', 32],
+        ['cn', 28],
+        ['gb', 11],
+        ['us', 37]
     ],
     2000: [
-        ['South Korea', 0],
-        ['Japan', 0],
-        ['Australia', 9],
-        ['Germany', 20],
-        ['Russia', 26],
-        ['China', 16],
-        ['Great Britain', 0],
-        ['United States', 44]
+        ['kr', 7],
+        ['jp', 3],
+        ['au', 9],
+        ['de', 20],
+        ['ru', 26],
+        ['cn', 16],
+        ['gb', 1],
+        ['us', 44]
     ]
 };
 
-var data = {
+const data = {
+    2020: [
+        ['kr', 6],
+        ['jp', 27],
+        ['au', 17],
+        ['de', 10],
+        ['ru', 20],
+        ['cn', 38],
+        ['gb', 22],
+        ['us', 39]
+    ],
     2016: [
-        ['South Korea', 0],
-        ['Japan', 0],
-        ['Australia', 0],
-        ['Germany', 17],
-        ['Russia', 19],
-        ['China', 26],
-        ['Great Britain', 27],
-        ['United States', 46]
+        ['kr', 9],
+        ['jp', 12],
+        ['au', 8],
+        ['de', 17],
+        ['ru', 19],
+        ['cn', 26],
+        ['gb', 27],
+        ['us', 46]
     ],
     2012: [
-        ['South Korea', 13],
-        ['Japan', 0],
-        ['Australia', 0],
-        ['Germany', 0],
-        ['Russia', 24],
-        ['China', 38],
-        ['Great Britain', 29],
-        ['United States', 46]
+        ['kr', 13],
+        ['jp', 7],
+        ['au', 8],
+        ['de', 11],
+        ['ru', 20],
+        ['cn', 38],
+        ['gb', 29],
+        ['us', 47]
     ],
     2008: [
-        ['South Korea', 0],
-        ['Japan', 0],
-        ['Australia', 0],
-        ['Germany', 16],
-        ['Russia', 22],
-        ['China', 51],
-        ['Great Britain', 19],
-        ['United States', 36]
+        ['kr', 13],
+        ['jp', 9],
+        ['au', 14],
+        ['de', 16],
+        ['ru', 24],
+        ['cn', 48],
+        ['gb', 19],
+        ['us', 36]
     ],
     2004: [
-        ['South Korea', 0],
-        ['Japan', 16],
-        ['Australia', 17],
-        ['Germany', 0],
-        ['Russia', 27],
-        ['China', 32],
-        ['Great Britain', 0],
-        ['United States', 37]
+        ['kr', 9],
+        ['jp', 17],
+        ['au', 18],
+        ['de', 13],
+        ['ru', 29],
+        ['cn', 33],
+        ['gb', 9],
+        ['us', 37]
     ],
     2000: [
-        ['South Korea', 0],
-        ['Japan', 0],
-        ['Australia', 16],
-        ['Germany', 13],
-        ['Russia', 32],
-        ['China', 28],
-        ['Great Britain', 0],
-        ['United States', 36]
+        ['kr', 8],
+        ['jp', 5],
+        ['au', 16],
+        ['de', 13],
+        ['ru', 32],
+        ['cn', 28],
+        ['gb', 11],
+        ['us', 37]
     ]
 };
 
-var countries = [{
-    name: 'South Korea',
-    flag: 197582,
-    color: 'rgb(201, 36, 39)'
-}, {
-    name: 'Japan',
-    flag: 197604,
-    color: 'rgb(201, 36, 39)'
-}, {
-    name: 'Australia',
-    flag: 197507,
-    color: 'rgb(0, 82, 180)'
-}, {
-    name: 'Germany',
-    flag: 197571,
-    color: 'rgb(0, 0, 0)'
-}, {
-    name: 'Russia',
-    flag: 197408,
-    color: 'rgb(240, 240, 240)'
-}, {
-    name: 'China',
-    flag: 197375,
-    color: 'rgb(255, 217, 68)'
-}, {
-    name: 'Great Britain',
-    flag: 197374,
-    color: 'rgb(0, 82, 180)'
-}, {
-    name: 'United States',
-    flag: 197484,
-    color: 'rgb(215, 0, 38)'
-}];
+const countries = {
+    kr: {
+        name: 'South Korea',
+        color: '#FE2371'
+    },
+    jp: {
+        name: 'Japan',
+        color: '#544FC5'
+    },
+    au: {
+        name: 'Australia',
+        color: '#2CAFFE'
+    },
+    de: {
+        name: 'Germany',
+        color: '#FE6A35'
+    },
+    ru: {
+        name: 'Russia',
+        color: '#6B8ABC'
+    },
+    cn: {
+        name: 'China',
+        color: '#1C74BD'
+    },
+    gb: {
+        name: 'Great Britain',
+        color: '#00A6A6'
+    },
+    us: {
+        name: 'United States',
+        color: '#D568FB'
+    }
+};
 
-
-function getData(data) {
-    return data.map(function (country, i) {
-        return {
-            name: country[0],
-            y: country[1],
-            color: countries[i].color
-        };
-    });
+// Add upper case country code
+for (const [key, value] of Object.entries(countries)) {
+    value.ucCode = key.toUpperCase();
 }
 
-var chart = Highcharts.chart('container', {
+
+const getData = data => data.map(point => ({
+    name: point[0],
+    y: point[1],
+    color: countries[point[0]].color
+}));
+
+const chart = Highcharts.chart('container', {
     chart: {
         type: 'column'
     },
+    // Custom option for templates
+    countries,
     title: {
-        text: 'Summer Olympics 2016 - Top 5 countries by Gold medals'
+        text: 'Summer Olympics 2020 - Top 5 countries by Gold medals',
+        align: 'left'
     },
     subtitle: {
-        text: 'Comparing to results from Summer Olympics 2012 - Source: <a href="https://en.wikipedia.org/wiki/2016_Summer_Olympics_medal_table">Wikipedia</a>'
+        text: 'Comparing to results from Summer Olympics 2016 - Source: <a ' +
+            'href="https://olympics.com/en/olympic-games/tokyo-2020/medals"' +
+            'target="_blank">Olympics</a>',
+        align: 'left'
     },
     plotOptions: {
         series: {
@@ -170,26 +198,25 @@ var chart = Highcharts.chart('container', {
     },
     tooltip: {
         shared: true,
-        headerFormat: '<span style="font-size: 15px">{point.point.name}</span><br/>',
-        pointFormat: '<span style="color:{point.color}">\u25CF</span> {series.name}: <b>{point.y} medals</b><br/>'
+        headerFormat: '<span style="font-size: 15px">' +
+            '{series.chart.options.countries.(point.key).name}' +
+            '</span><br/>',
+        pointFormat: '<span style="color:{point.color}">\u25CF</span> ' +
+            '{series.name}: <b>{point.y} medals</b><br/>'
     },
     xAxis: {
         type: 'category',
+        accessibility: {
+            description: 'Countries'
+        },
         max: 4,
         labels: {
             useHTML: true,
             animate: true,
-            formatter: function () {
-                var value = this.value,
-                    output;
-
-                countries.forEach(function (country) {
-                    if (country.name === value) {
-                        output = country.flag;
-                    }
-                });
-
-                return '<span><img src="https://image.flaticon.com/icons/svg/197/' + output + '.svg" style="width: 40px; height: 40px;"/><br></span>';
+            format: '{chart.options.countries.(value).ucCode}<br>' +
+                '<span class="f32"><span class="flag {value}"></span></span>',
+            style: {
+                textAlign: 'center'
             }
         }
     },
@@ -200,13 +227,13 @@ var chart = Highcharts.chart('container', {
         showFirstLabel: false
     }],
     series: [{
-        color: 'rgb(158, 159, 163)',
+        color: 'rgba(158, 159, 163, 0.5)',
         pointPlacement: -0.2,
         linkedTo: 'main',
-        data: dataPrev[2016].slice(),
-        name: '2012'
+        data: dataPrev[2020].slice(),
+        name: '2016'
     }, {
-        name: '2016',
+        name: '2020',
         id: 'main',
         dataSorting: {
             enabled: true,
@@ -219,38 +246,62 @@ var chart = Highcharts.chart('container', {
                 fontSize: '16px'
             }
         }],
-        data: getData(data[2016]).slice()
+        data: getData(data[2020]).slice()
     }],
     exporting: {
         allowHTML: true
     }
 });
 
-var years = [2016, 2012, 2008, 2004, 2000];
+const locations = [
+    {
+        city: 'Tokyo',
+        year: 2020
+    }, {
+        city: 'Rio',
+        year: 2016
+    }, {
+        city: 'London',
+        year: 2012
+    }, {
+        city: 'Beijing',
+        year: 2008
+    }, {
+        city: 'Athens',
+        year: 2004
+    }, {
+        city: 'Sydney',
+        year: 2000
+    }
+];
 
-years.forEach(function (year) {
-    var btn = document.getElementById(year);
+locations.forEach(location => {
+    const btn = document.getElementById(location.year);
 
-    btn.addEventListener('click', function () {
+    btn.addEventListener('click', () => {
 
-        document.querySelectorAll('.buttons button.active').forEach(function (active) {
-            active.className = '';
-        });
+        document.querySelectorAll('.buttons button.active')
+            .forEach(active => {
+                active.className = '';
+            });
         btn.className = 'active';
 
         chart.update({
             title: {
-                text: 'Summer Olympics ' + year + ' - Top 5 countries by Gold medals'
+                text: 'Summer Olympics ' + location.year +
+                    ' - Top 5 countries by Gold medals'
             },
             subtitle: {
-                text: 'Comparing to results from Summer Olympics ' + (year - 4) + ' - Source: <a href="https://en.wikipedia.org/wiki/' + (year) + '_Summer_Olympics_medal_table">Wikipedia</a>'
+                text: 'Comparing to results from Summer Olympics ' +
+                    (location.year - 4) + ' - Source: <a href="https://olympics.com/en/olympic-games/' +
+                    (location.city.toLowerCase()) + '-' + (location.year) + '/medals" target="_blank">Olympics</a>'
             },
             series: [{
-                name: year - 4,
-                data: dataPrev[year].slice()
+                name: location.year - 4,
+                data: dataPrev[location.year].slice()
             }, {
-                name: year,
-                data: getData(data[year]).slice()
+                name: location.year,
+                data: getData(data[location.year]).slice()
             }]
         }, true, false, {
             duration: 800

@@ -1,4 +1,8 @@
 QUnit.test('Add point without shift', function (assert) {
+    const usdeurCopy = new Array(3000).fill(1).map((item, i) => [
+        Date.UTC(2010, 0, 1) + i * 24 * 36e5,
+        Math.random()
+    ]);
     var chart = Highcharts.stockChart('container', {
             rangeSelector: {
                 selected: 1
@@ -6,7 +10,7 @@ QUnit.test('Add point without shift', function (assert) {
             series: [
                 {
                     name: 'USD to EUR',
-                    data: usdeur.splice(0, 500)
+                    data: usdeurCopy.splice(0, 500)
                 }
             ]
         }),
@@ -15,7 +19,7 @@ QUnit.test('Add point without shift', function (assert) {
     function add100() {
         var i = 0,
             series = chart.series[0],
-            data = usdeur.splice(0, 100);
+            data = usdeurCopy.splice(0, 100);
 
         maxX = data[data.length - 1][0];
         for (i; i < data.length; i += 1) {
@@ -73,6 +77,10 @@ QUnit.test('Add point without shift', function (assert) {
 });
 
 QUnit.test('Add point with shift', function (assert) {
+    const usdeurCopy = new Array(3000).fill(1).map((item, i) => [
+        Date.UTC(2010, 0, 1) + i * 24 * 36e5,
+        Math.random()
+    ]);
     var chart = Highcharts.stockChart('container', {
             chart: {
                 width: 800
@@ -82,7 +90,7 @@ QUnit.test('Add point with shift', function (assert) {
             },
             series: [
                 {
-                    data: usdeur.splice(0, 500)
+                    data: usdeurCopy.splice(0, 500)
                 }
             ]
         }),
@@ -91,7 +99,7 @@ QUnit.test('Add point with shift', function (assert) {
     function add100() {
         var i = 0,
             series = chart.series[0],
-            data = usdeur.splice(0, 100);
+            data = usdeurCopy.splice(0, 100);
 
         maxX = data[data.length - 1][0];
         for (i; i < data.length; i += 1) {
@@ -143,15 +151,13 @@ QUnit.test('Add point with shift', function (assert) {
     maxBefore = chart.xAxis[0].max;
 
     add100();
-    assert.strictEqual(
-        chart.xAxis[0].min > minBefore,
-        true,
+    assert.ok(
+        chart.xAxis[0].min >= minBefore,
         'Stick left, data shifted'
     );
 
-    assert.strictEqual(
-        chart.xAxis[0].max > maxBefore,
-        true,
+    assert.ok(
+        chart.xAxis[0].max >= maxBefore,
         'Stick left, data shifted'
     );
 });

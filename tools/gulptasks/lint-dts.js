@@ -13,7 +13,7 @@ const path = require('path');
 
 const LINT_FOLDER = path.join('test', 'typescript-lint');
 
-const TEST_FOLDER = path.join('test', 'typescript');
+const TEST_FOLDER = path.join('test', 'typescript-dts');
 
 /* *
  *
@@ -37,21 +37,27 @@ function task() {
 
         logLib.message('Linting ...');
 
-        const promises = [];
+        let promiseChain = Promise.resolve();
 
-        promises.push(
-            processLib
-                .exec('cd ' + LINT_FOLDER + ' && npx dtslint --onlyTestTsNext')
+        promiseChain = promiseChain.then(
+            processLib.exec(
+                'npx dtslint --localTs ../../node_modules/typescript/lib',
+                {
+                    cwd: path.join(process.cwd(), LINT_FOLDER)
+                }
+            )
         );
 
-        promises.push(
-            ...fsLib
-                .getDirectoryPaths(TEST_FOLDER, false)
-                .map(folder => processLib.exec('npx tsc -p ' + folder))
-        );
+        fsLib
+            .getDirectoryPaths(TEST_FOLDER, false)
+            .filter(folder => !folder.includes('dashboards'))
+            .forEach(folder => {
+                promiseChain = promiseChain.then(
+                    () => processLib.exec('npx tsc -p ' + folder)
+                );
+            });
 
-        Promise
-            .all(promises)
+        promiseChain
             .then(() => logLib.success('Finished linting'))
             .then(resolve)
             .catch(reject);

@@ -23,12 +23,14 @@ import type ColorType from '../../Core/Color/ColorType';
 import type FunnelDataLabelOptions from './FunnelDataLabelOptions';
 import type FunnelPoint from './FunnelPoint';
 import type FunnelSeriesOptions from './FunnelSeriesOptions';
-import type SVGElement from '../../Core/Renderer/SVG/SVGElement';
+import type SVGLabel from '../../Core/Renderer/SVG/SVGLabel';
 import type SVGPath from '../../Core/Renderer/SVG/SVGPath';
+
 import Chart from '../../Core/Chart/Chart.js';
 import H from '../../Core/Globals.js';
 const { noop } = H;
-import palette from '../../Core/Color/Palette.js';
+import { Palette } from '../../Core/Color/Palettes.js';
+import BorderRadius from '../../Extensions/BorderRadius.js';
 import SeriesRegistry from '../../Core/Series/SeriesRegistry.js';
 const {
     series: Series,
@@ -43,7 +45,8 @@ const {
     fireEvent,
     isArray,
     merge,
-    pick
+    pick,
+    relativeLength
 } = U;
 
 /* *
@@ -94,6 +97,16 @@ class FunnelSeries extends PieSeries {
          * Initial animation is by default disabled for the funnel chart.
          */
         animation: false,
+
+        /**
+         * The corner radius of the border surrounding all points or series. A
+         * number signifies pixels. A percentage string, like for example `50%`,
+         * signifies a size relative to the series width.
+         *
+         * @sample highcharts/plotoptions/funnel-border-radius
+         *         Funnel and pyramid with rounded border
+         */
+        borderRadius: 0,
 
         /**
          * The center of the series. By default, it is centered in the middle
@@ -188,14 +201,14 @@ class FunnelSeries extends PieSeries {
                  *
                  * @type {Highcharts.ColorString|Highcharts.GradientColorObject|Highcharts.PatternObject}
                  */
-                color: palette.neutralColor20,
+                color: Palette.neutralColor20,
 
                 /**
                  * A specific border color for the selected point.
                  *
                  * @type {Highcharts.ColorString}
                  */
-                borderColor: palette.neutralColor100
+                borderColor: Palette.neutralColor100
             }
         }
     } as FunnelSeriesOptions);
@@ -227,12 +240,12 @@ class FunnelSeries extends PieSeries {
      */
     public alignDataLabel(
         point: FunnelPoint,
-        dataLabel: SVGElement,
+        dataLabel: SVGLabel,
         options: FunnelDataLabelOptions,
         alignTo: BBoxObject,
         isNew?: boolean
     ): void {
-        var series = point.series,
+        let series = point.series,
             reversed = series.options.reversed,
             dlBox = point.dlBox || point.shapeArgs,
             align = options.align,
@@ -255,10 +268,16 @@ class FunnelSeries extends PieSeries {
             y = dlBox.y,
             x = dlBox.x;
 
+        // #16176: Only SVGLabel has height set
+        const dataLabelHeight = pick(
+            dataLabel.height,
+            dataLabel.getBBox().height
+        );
+
         if (verticalAlign === 'middle') {
-            y = dlBox.y - dlBox.height / 2 + dataLabel.height / 2;
+            y = dlBox.y - dlBox.height / 2 + dataLabelHeight / 2;
         } else if (verticalAlign === 'top') {
-            y = dlBox.y - dlBox.height + dataLabel.height +
+            y = dlBox.y - dlBox.height + dataLabelHeight +
                 options.padding;
         }
 
@@ -316,7 +335,7 @@ class FunnelSeries extends PieSeries {
      * @private
      */
     public drawDataLabels(): void {
-        var series = this,
+        let series = this,
             data = series.data,
             labelDistance: number =
                 (series.options.dataLabels as any).distance,
@@ -358,7 +377,7 @@ class FunnelSeries extends PieSeries {
                     x: 0,
                     y: y as any
                 },
-                'final': {
+                computed: {
                     // used for generating connector path -
                     // initialized later in drawDataLabels function
                     // x: undefined,
@@ -391,12 +410,15 @@ class FunnelSeries extends PieSeries {
      */
     public translate(): void {
 
-        var sum = 0,
+        let sum = 0,
             series = this,
             chart = series.chart,
             options = series.options,
             reversed = options.reversed,
             ignoreHiddenPoint = options.ignoreHiddenPoint,
+            borderRadiusObject = BorderRadius.optionsToObject(
+                options.borderRadius
+            ),
             plotWidth = chart.plotWidth,
             plotHeight = chart.plotHeight,
             cumulative = 0, // start at top
@@ -412,6 +434,36 @@ class FunnelSeries extends PieSeries {
             data = series.data,
             path: SVGPath,
             fraction,
+            borderRadius = relativeLength(
+                borderRadiusObject.radius,
+                width
+            ),
+            radiusScope = borderRadiusObject.scope,
+            alpha: number, // the angle between top and left point's edges
+            maxT: number,
+            roundingFactors = (angle: number): {
+                dx: Array<number>,
+                dy: Array<number>
+            } => {
+                const tan = Math.tan(angle / 2),
+                    cosA = Math.cos(alpha),
+                    sinA = Math.sin(alpha);
+                let r = borderRadius,
+                    t = r / tan,
+                    k = Math.tan((Math.PI - angle) / 3.2104);
+
+                if (t > maxT) {
+                    t = maxT;
+                    r = t * tan;
+                }
+                k *= r;
+
+                return {
+                    dx: [t * cosA, (t - k) * cosA, t - k, t],
+                    dy: [t * sinA, (t - k) * sinA, t - k, t]
+                        .map((i): number => (reversed ? -i : i))
+                };
+            },
             half = (
                 (options.dataLabels as any).position === 'left' ?
                     1 :
@@ -449,7 +501,7 @@ class FunnelSeries extends PieSeries {
             this: FunnelSeries,
             y: number
         ): number {
-            var top = (centerY - height / 2);
+            const top = (centerY - height / 2);
 
             return (y > neckY || height === neckHeight) ?
                 neckWidth :
@@ -494,8 +546,10 @@ class FunnelSeries extends PieSeries {
 
         // get the total sum
         data.forEach(function (point): void {
-            if (!ignoreHiddenPoint || point.visible !== false) {
-                sum += point.y as any;
+            if (point.y && point.isValid() &&
+                (!ignoreHiddenPoint || point.visible !== false)
+            ) {
+                sum += point.y;
             }
         });
 
@@ -536,16 +590,144 @@ class FunnelSeries extends PieSeries {
                 }
             }
 
-            // save the path
-            path = [
-                ['M', x1, y1],
-                ['L', x2, y1],
-                ['L', x4, y3]
-            ];
-            if (y5 !== null) {
-                path.push(['L', x4, y5], ['L', x3, y5]);
+            if (borderRadius && (
+                radiusScope === 'point' ||
+                point.index === 0 ||
+                point.index === data.length - 1 ||
+                y5 !== null
+            )) {
+                // Creating the path of funnel points with rounded corners
+                // (#18839)
+                const h = Math.abs(y3 - y1),
+                    xSide = x2 - x4,
+                    lBase = x4 - x3,
+                    lSide = Math.sqrt(xSide * xSide + h * h);
+
+                alpha = Math.atan(h / xSide);
+                maxT = lSide / 2;
+                if (y5 !== null) {
+                    maxT = Math.min(maxT, Math.abs(y5 - y3) / 2);
+                }
+                if (lBase >= 1) {
+                    maxT = Math.min(maxT, lBase / 2);
+                }
+
+                // Creating a point base
+                let f = roundingFactors(alpha);
+                if (radiusScope === 'stack' && point.index !== 0) {
+                    path = [
+                        ['M', x1, y1],
+                        ['L', x2, y1]
+                    ];
+                } else {
+                    path = [
+                        ['M', x1 + f.dx[0], y1 + f.dy[0]],
+                        ['C',
+                            x1 + f.dx[1], y1 + f.dy[1],
+                            x1 + f.dx[2], y1,
+                            x1 + f.dx[3], y1
+                        ],
+                        ['L', x2 - f.dx[3], y1],
+                        ['C',
+                            x2 - f.dx[2], y1,
+                            x2 - f.dx[1], y1 + f.dy[1],
+                            x2 - f.dx[0], y1 + f.dy[0]
+                        ]
+                    ];
+                }
+
+                if (y5 !== null) {
+                    // Closure of point with extension
+                    const fr = roundingFactors(Math.PI / 2);
+                    f = roundingFactors(Math.PI / 2 + alpha);
+                    path.push(
+                        ['L', x4 + f.dx[0], y3 - f.dy[0]],
+                        ['C',
+                            x4 + f.dx[1], y3 - f.dy[1],
+                            x4, y3 + f.dy[2],
+                            x4, y3 + f.dy[3]
+                        ]
+                    );
+
+                    if (
+                        radiusScope === 'stack' &&
+                        point.index !== data.length - 1
+                    ) {
+                        path.push(['L', x4, y5], ['L', x3, y5]);
+                    } else {
+                        path.push(
+                            ['L', x4, y5 - fr.dy[3]],
+                            ['C',
+                                x4, y5 - fr.dy[2],
+                                x4 - fr.dx[2], y5,
+                                x4 - fr.dx[3], y5
+                            ],
+                            ['L', x3 + fr.dx[3], y5],
+                            ['C',
+                                x3 + fr.dx[2], y5,
+                                x3, y5 - fr.dy[2],
+                                x3, y5 - fr.dy[3]
+                            ]
+                        );
+                    }
+
+                    path.push(
+                        ['L', x3, y3 + f.dy[3]],
+                        ['C',
+                            x3, y3 + f.dy[2],
+                            x3 - f.dx[1], y3 - f.dy[1],
+                            x3 - f.dx[0], y3 - f.dy[0]
+                        ]
+                    );
+                } else if (lBase >= 1) {
+                    // Closure of point without extension
+                    f = roundingFactors(Math.PI - alpha);
+                    if (radiusScope === 'stack' && point.index === 0) {
+                        path.push(['L', x4, y3], ['L', x3, y3]);
+                    } else {
+                        path.push(
+                            ['L', x4 + f.dx[0], y3 - f.dy[0]],
+                            ['C',
+                                x4 + f.dx[1], y3 - f.dy[1],
+                                x4 - f.dx[2], y3,
+                                x4 - f.dx[3], y3
+                            ],
+                            ['L', x3 + f.dx[3], y3],
+                            ['C',
+                                x3 + f.dx[2], y3,
+                                x3 - f.dx[1], y3 - f.dy[1],
+                                x3 - f.dx[0], y3 - f.dy[0]
+                            ]
+                        );
+                    }
+                } else {
+                    // Creating a rounded tip of the "pyramid"
+                    f = roundingFactors(Math.PI - alpha * 2);
+                    path.push(
+                        ['L', x3 + f.dx[0], y3 - f.dy[0]],
+                        ['C',
+                            x3 + f.dx[1], y3 - f.dy[1],
+                            x3 - f.dx[1], y3 - f.dy[1],
+                            x3 - f.dx[0], y3 - f.dy[0]
+                        ]
+                    );
+                }
+            } else {
+                // Creating the path of funnel points without rounded corners
+                path = [
+                    ['M', x1, y1],
+                    ['L', x2, y1],
+                    ['L', x4, y3]
+                ];
+                if (y5 !== null) {
+                    path.push(['L', x4, y5], ['L', x3, y5]);
+                }
+                path.push(['L', x3, y3]);
             }
-            path.push(['L', x3, y3], ['Z']);
+            path.push(
+                ['Z']
+            );
+
 
             // prepare for using shared dr
             point.shapeType = 'path';
@@ -578,7 +760,8 @@ class FunnelSeries extends PieSeries {
             // Mimicking pie data label placement logic
             point.half = half;
 
-            if (!ignoreHiddenPoint || point.visible !== false) {
+            if (point.isValid() &&
+                (!ignoreHiddenPoint || point.visible !== false)) {
                 cumulative += fraction;
             }
         });
@@ -602,14 +785,18 @@ class FunnelSeries extends PieSeries {
 
 /* *
  *
- *  Prototype Properties
+ *  Class Prototype
  *
  * */
 
 interface FunnelSeries {
     pointClass: typeof FunnelPoint;
     getWidthAt(y: number): number; // added during translate
-    getX(y: number, half: boolean, point: FunnelPoint): number; // added during translate
+    getX(
+        y: number,
+        half: boolean,
+        point: FunnelPoint
+    ): number; // added during translate
 }
 extend(FunnelSeries.prototype, {
     animate: noop

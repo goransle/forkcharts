@@ -1,6 +1,6 @@
 QUnit.test('Sankey', function (assert) {
-    var chart = Highcharts.chart('container', {});
-    var series = chart.addSeries(
+    const chart = Highcharts.chart('container', {});
+    let series = chart.addSeries(
         {
             keys: ['from', 'to', 'weight'],
             data: [
@@ -116,6 +116,52 @@ QUnit.test('Sankey', function (assert) {
         'object',
         'No-data label should display when there is no data (#7489)'
     );
+
+    series = chart.addSeries({
+        type: 'sankey',
+        keys: ['from', 'to', 'weight'],
+        data: [
+            ['A', 'B', 500],
+            ['B', 'C', 1]
+        ]
+    });
+
+    const { toNode } = series.points[1];
+
+    assert.ok(
+        toNode.graphic.r < toNode.graphic.height,
+        `Border radius should not greater than half the height of the node,
+        small nodes shouldn't be rendered as circles (#18956).`
+    );
+
+    const lastNode = series.nodeColumns[2][0];
+
+    assert.close(
+        lastNode.nodeY,
+        (chart.plotHeight - lastNode.graphic.height) / 2,
+        2,
+        'Center-aligned nodes should be in the correct y-position. (#19096)'
+    );
+
+    series.update({
+        nodeAlignment: 'top'
+    });
+
+    assert.strictEqual(
+        lastNode.nodeY,
+        0,
+        'Top-aligned nodes should be in the correct y-position. (#19096)'
+    );
+
+    series.update({
+        nodeAlignment: 'bottom'
+    });
+
+    assert.strictEqual(
+        lastNode.nodeY,
+        chart.plotHeight - lastNode.graphic.height,
+        'Bottom-aligned nodes should be in the correct y-position. (#19096)'
+    );
 });
 
 QUnit.test('Sankey nodeFormat, nodeFormatter', function (assert) {
@@ -212,6 +258,23 @@ QUnit.test('Sankey nodeFormat, nodeFormatter', function (assert) {
         series.points[0].dataLabel.text.textStr,
         'Linkz',
         'Explicit point format'
+    );
+    series.nodes[0].onMouseOver();
+    assert.notEqual(
+        chart.tooltip.label.text.textStr.indexOf('Nodez'),
+        -1,
+        'Tooltip ok'
+    );
+
+    series.nodes[0].update({
+        color: 'red'
+    });
+
+    // After update, nodes should still use nodeFormat etc
+    assert.strictEqual(
+        series.nodes[0].dataLabel.text.textStr,
+        'Nodez',
+        'Explicit nodeFormat'
     );
     series.nodes[0].onMouseOver();
     assert.notEqual(
@@ -528,6 +591,18 @@ QUnit.test('Sankey and circular data', function (assert) {
         'The link should have a complex, circular structure, ' +
             'not direct (#12882)'
     );
+
+    chart.series[0].setData([
+        ['a', 'a', 1]
+    ]);
+    chart.series[0].redraw();
+
+    const shapeArgs = chart.series[0].nodes[0].shapeArgs;
+    assert.deepEqual(
+        [shapeArgs.x, shapeArgs.y],
+        [0, 0],
+        '#16080: Node should still be in top left corner after redraw'
+    );
 });
 
 QUnit.test('Sankey and minimum line width', function (assert) {
@@ -757,9 +832,10 @@ QUnit.test('Wrong spacings when zero minLinkWidth #13308', function (assert) {
     const nodeYAfterUpdate = chart.series[0].nodes[1].nodeY,
         factorAfterUpdate = chart.series[0].translationFactor;
 
-    assert.strictEqual(
+    assert.close(
         nodeYAfterUpdate - nodeYBeforeUpdate,
         newMinLinkWidth,
+        1,
         'For this node the difference of the nodeY value should be equal ' +
             'to the new minLinkWidth after the update (#13308)'
     );
@@ -852,5 +928,88 @@ QUnit.test('#14584: Sankey overlapping datalabels', assert => {
     assert.ok(
         chart.series[0].points.some(p => p.dataLabel.attr('opacity') === 0),
         'Some of the point datalabels should be hidden'
+    );
+});
+
+QUnit.test('Sankey and point updates', assert => {
+    const linkConfig = { from: 'A', to: 'B', weight: 1 },
+        chart = Highcharts.chart('container', {
+            series: [{
+                data: [Highcharts.merge(linkConfig)], // use a shallow copy
+                type: 'sankey',
+                nodes: [{
+                    id: 'A',
+                    color: 'red'
+                }]
+            }]
+        }),
+        series = chart.series[0];
+
+    // Test 1:
+    // Uodate a node that exists in a config
+    series.nodes[0].update({
+        color: 'black'
+    });
+
+    assert.strictEqual(
+        series.nodes[0].graphic.attr('fill'),
+        'black',
+        'After an update, node defined in options should use new color.'
+    );
+
+    assert.deepEqual(
+        series.options.nodes[0].color,
+        'black',
+        `After an update,
+        node defined in options should have correct color in options.`
+    );
+
+    assert.deepEqual(
+        series.options.data[0],
+        linkConfig,
+        `Updating a node defined in options
+        should not replace a link config (#11712).`
+    );
+
+    // Test 2:
+    // Uodate a node that DOES NOT exist in a config
+    series.nodes[1].update({
+        color: 'green'
+    });
+
+    assert.strictEqual(
+        series.options.nodes.length,
+        2,
+        `Updating a node without options,
+        should create a new entry in options.`
+    );
+
+    assert.strictEqual(
+        series.nodes[1].graphic.attr('fill'),
+        'green',
+        'After an update, node without config should use new color.'
+    );
+
+    assert.deepEqual(
+        series.options.nodes[1].color,
+        'green',
+        `After an update,
+        node without config should have correct color in options.`
+    );
+
+    assert.deepEqual(
+        series.options.data[0],
+        linkConfig,
+        `Updating a node without config
+        should not replace a link config (#11712).`
+    );
+
+    assert.strictEqual(
+        series.options.data.length,
+        1,
+        `
+        Udpating a node with higher index than available in series.options.data
+        should not add any elements to the series.options.data
+        `
     );
 });

@@ -97,7 +97,7 @@ class ColumnPyramidSeries extends ColumnSeries {
      * @private
      */
     public translate(): void {
-        var series = this,
+        let series = this,
             chart = series.chart,
             options = series.options,
             dense = series.dense =
@@ -137,7 +137,7 @@ class ColumnPyramidSeries extends ColumnSeries {
         series.points.forEach(function (
             point: ColumnPyramidPoint
         ): void {
-            var yBottom = pick<number|undefined, number>(
+            let yBottom = pick<number|undefined, number>(
                     point.yBottom, translatedThreshold as any
                 ),
                 safeDistance = 999 + Math.abs(yBottom),
@@ -160,6 +160,15 @@ class ColumnPyramidSeries extends ColumnSeries {
                 invBarPos: number,
                 x1, x2, x3, x4, y1, y2;
 
+            // Adjust for null or missing points
+            if (options.centerInCategory) {
+                barX = series.adjustForMissingColumns(
+                    barX,
+                    pointWidth,
+                    point,
+                    metrics
+                );
+            }
 
             point.barX = barX;
             point.pointWidth = pointWidth;
@@ -199,17 +208,20 @@ class ColumnPyramidSeries extends ColumnSeries {
 
             // topXwidth and bottomXwidth = width of lines from the center
             // calculated from tanges proportion.
-            // Can not be a NaN #12514
-            topXwidth = stackHeight ? (barW * (barY - topPointY)) / stackHeight : 0;
+            // Cannot be a NaN #12514
+            topXwidth = stackHeight ?
+                (barW * (barY - topPointY)) / stackHeight : 0;
             // like topXwidth, but with height of point
-            bottomXwidth = stackHeight ? (barW * (barY + barH - topPointY)) / stackHeight : 0;
+            bottomXwidth = stackHeight ?
+                (barW * (barY + barH - topPointY)) / stackHeight :
+                0;
 
             /*
                     /\
-                    /  \
+                   /  \
             x1,y1,------ x2,y1
-                    /      \
-                ----------
+                /      \
+               ----------
             x4,y2        x3,y2
             */
 
@@ -228,9 +240,9 @@ class ColumnPyramidSeries extends ColumnSeries {
 
             // inverted chart
             if (chart.inverted) {
-                invBarPos = chart.plotWidth - barY;
-                stackHeight = (topPointY -
-                (chart.plotWidth - (translatedThreshold as any)));
+                invBarPos = yAxis.width - barY;
+                stackHeight =
+                    topPointY - (yAxis.width - (translatedThreshold as any));
 
                 // proportion tanges
                 topXwidth = (barW *

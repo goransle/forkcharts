@@ -12,6 +12,7 @@
  *
  * */
 
+import type MultipleLinesComposition from '../MultipleLinesComposition';
 import type {
     StochasticOptions,
     StochasticParamsOptions
@@ -23,12 +24,18 @@ import type {
  *
  * */
 
-export interface SlowStochasticOptions extends StochasticOptions, Highcharts.MultipleLinesIndicatorOptions {
+export interface SlowStochasticOptions extends StochasticOptions, MultipleLinesComposition.IndicatorOptions {
     params?: SlowStochasticParamsOptions;
 }
 
 export interface SlowStochasticParamsOptions extends StochasticParamsOptions {
     // for inheritance
 }
+
+/* *
+ *
+ *  Default Export
+ *
+ * */
 
 export default SlowStochasticOptions;

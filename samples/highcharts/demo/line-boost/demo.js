@@ -1,6 +1,6 @@
 function getData(n) {
-    var arr = [],
-        i,
+    const arr = [];
+    let i,
         x,
         a,
         b,
@@ -32,7 +32,7 @@ function getData(n) {
     }
     return arr;
 }
-var n = 500000,
+const n = 500000,
     data = getData(n);
 
 
@@ -49,6 +49,12 @@ Highcharts.chart('container', {
 
     subtitle: {
         text: 'Using the Boost module'
+    },
+
+    accessibility: {
+        screenReaderSection: {
+            beforeChartFormat: '<{headingTagName}>{chartTitle}</{headingTagName}><div>{chartSubtitle}</div><div>{chartLongdesc}</div><div>{xAxisDescription}</div><div>{yAxisDescription}</div>'
+        }
     },
 
     tooltip: {

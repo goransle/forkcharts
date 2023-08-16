@@ -1,11 +1,15 @@
 QUnit.test('Hover color', function (assert) {
     // Cache names from Boost module
-    var colorNames = Highcharts.Color.prototype.names;
-    Highcharts.Color.prototype.names = {};
+    var colorNames = Highcharts.Color.names;
+    Highcharts.Color.names = {};
 
     var chart = Highcharts.mapChart('container', {
+            mapNavigation: {
+                enabled: true
+            },
             series: [
                 {
+                    allowPointSelect: true,
                     mapData: Highcharts.maps['custom/europe'],
                     data: [
                         ['no', 5],
@@ -54,5 +58,14 @@ QUnit.test('Hover color', function (assert) {
     );
 
     // Reset
-    Highcharts.Color.prototype.names = colorNames;
+    Highcharts.Color.names = colorNames;
+
+    point1.firePointEvent('click');
+    chart.mapView.zoomBy(1);
+
+    assert.strictEqual(
+        point1.selected,
+        true,
+        'Point should be selected after zooming/panning the chart (#19175).'
+    );
 });

@@ -1,10 +1,15 @@
-Highcharts.getJSON('https://demo-live-data.highcharts.com/aapl-ohlcv.json', function (data) {
+(async () => {
+
+    const data = await fetch(
+        'https://demo-live-data.highcharts.com/aapl-ohlcv.json'
+    ).then(response => response.json());
+
     // split the data set into ohlc and volume
-    var ohlc = [],
+    const ohlc = [],
         volume = [],
         dataLength = data.length;
 
-    for (var i = 0; i < dataLength; i += 1) {
+    for (let i = 0; i < dataLength; i += 1) {
         ohlc.push([
             data[i][0], // the date
             data[i][1], // open
@@ -30,6 +35,15 @@ Highcharts.getJSON('https://demo-live-data.highcharts.com/aapl-ohlcv.json', func
         subtitle: {
             text: 'All indicators'
         },
+        accessibility: {
+            series: {
+                descriptionFormat: '{seriesDescription}.'
+            },
+            description: 'Use the dropdown menus above to display different indicator series on the chart.',
+            screenReaderSection: {
+                beforeChartFormat: '<{headingTagName}>{chartTitle}</{headingTagName}><div>{typeDescription}</div><div>{chartSubtitle}</div><div>{chartLongdesc}</div>'
+            }
+        },
         legend: {
             enabled: true
         },
@@ -47,7 +61,10 @@ Highcharts.getJSON('https://demo-live-data.highcharts.com/aapl-ohlcv.json', func
         }],
         plotOptions: {
             series: {
-                showInLegend: true
+                showInLegend: true,
+                accessibility: {
+                    exposeAsGroupOnly: true
+                }
             }
         },
         series: [{
@@ -74,7 +91,7 @@ Highcharts.getJSON('https://demo-live-data.highcharts.com/aapl-ohlcv.json', func
         }]
     }, function (chart) {
         document.getElementById('overlays').addEventListener('change', function (e) {
-            var series = chart.get('overlay');
+            const series = chart.get('overlay');
 
             if (series) {
                 series.remove(false);
@@ -87,7 +104,7 @@ Highcharts.getJSON('https://demo-live-data.highcharts.com/aapl-ohlcv.json', func
         });
 
         document.getElementById('oscillators').addEventListener('change', function (e) {
-            var series = chart.get('oscillator');
+            const series = chart.get('oscillator');
 
             if (series) {
                 series.remove(false);
@@ -100,4 +117,4 @@ Highcharts.getJSON('https://demo-live-data.highcharts.com/aapl-ohlcv.json', func
             }
         });
     });
-});
+})();

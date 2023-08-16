@@ -11,21 +11,20 @@ const path = require('path');
  *
  * */
 
-const SOURCE_DIRECTORY = 'js';
+const SOURCE_DIRECTORY = 'code/es-modules/';
 
 const SOURCE_GLOBS = [
-    'Accessibility/**/*',
-    'Boost/**/*',
-    'Core/**/*',
-    'Data/**/*',
-    'DataGrid/**/*',
-    'Extensions/**/*',
-    'Gantt/**/*',
-    'Maps/**/*',
-    'Stock/**/*',
-    'Series/**/*'
+    'Accessibility',
+    'Core',
+    'Data',
+    'Extensions',
+    'Gantt',
+    'Maps',
+    'Series',
+    'Shared',
+    'Stock'
 ].map(
-    glob => SOURCE_DIRECTORY + '/' + glob
+    glob => SOURCE_DIRECTORY + '/' + glob + '/**/*'
 );
 
 const TARGET_DIRECTORY = path.join('build', 'api');
@@ -46,17 +45,21 @@ const TREE_FILE = 'tree.json';
  */
 function createApiDocumentation() {
 
-    const apidocs = require('highcharts-documentation-generators').ApiDocs;
-    const fs = require('fs');
-    const log = require('./lib/log');
+    const apidocs = require(
+            '@highcharts/highcharts-documentation-generators'
+        ).ApiDocs,
+        argv = require('yargs').argv,
+        fs = require('fs'),
+        log = require('./lib/log');
 
     return new Promise((resolve, reject) => {
 
         log.message('Generating', TARGET_DIRECTORY + '...');
 
-        const sourceJSON = JSON.parse(fs.readFileSync(TREE_FILE));
+        const sourceJSON = JSON.parse(fs.readFileSync(TREE_FILE)),
+            products = argv.products && argv.products.split(',');
 
-        apidocs(sourceJSON, TARGET_DIRECTORY, true, error => {
+        apidocs(sourceJSON, TARGET_DIRECTORY, products, error => {
 
             if (error) {
                 log.failure(error);
@@ -85,8 +88,9 @@ function createTreeJson() {
         const jsDocConfig = {
             plugins: [
                 path.join(
-                    'node_modules', 'highcharts-documentation-generators',
-                    'jsdoc', 'plugins', 'highcharts.jsdoc'
+                    'node_modules', '@highcharts',
+                    'highcharts-documentation-generators', 'jsdoc', 'plugins',
+                    'highcharts.jsdoc'
                 )
             ]
         };

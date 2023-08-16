@@ -19,6 +19,7 @@ export interface HTMLAttributes {
     'aria-expanded'?: boolean;
     'aria-label'?: string;
     'aria-live'?: string;
+    'aria-atomic'?: boolean;
     checked?: boolean;
     class?: string;
     className?: string;
@@ -31,6 +32,7 @@ export interface HTMLAttributes {
     name?: string;
     onclick?: any;
     onload?: any;
+    placeholder?: string;
     scope?: string;
     textContent?: string;
     title?: string;
@@ -44,5 +46,11 @@ export interface HTMLAttributes {
     valign?: 'bottom'|'middle'|'top';
     value?: string;
 }
+
+/* *
+ *
+ *  Default Export
+ *
+ * */
 
 export default HTMLAttributes;

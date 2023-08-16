@@ -8,6 +8,7 @@ QUnit.test('Missing plotband when range is small (#4964)', function (assert) {
                 {
                     color: '#BDBDBD',
                     from: 1453101708000,
+                    id: 'plotband-1',
                     to: 1453109508000
                 },
                 {
@@ -26,6 +27,11 @@ QUnit.test('Missing plotband when range is small (#4964)', function (assert) {
         true,
         'Second plotband is visible'
     );
+
+    // #15639
+    chart.xAxis[0].destroy();
+    chart.xAxis[0].removePlotBand('plotband-1');
+
 });
 
 QUnit.test(
@@ -224,7 +230,8 @@ QUnit.test('Defaults', assert => {
 QUnit.test('General tests', function (assert) {
     var chart = Highcharts.chart('container', {
         chart: {
-            width: 600
+            width: 600,
+            marginRight: 50
         },
         xAxis: {
             plotBands: [
@@ -246,7 +253,21 @@ QUnit.test('General tests', function (assert) {
                     value: 12500,
                     className: 'my-custom-class',
                     width: 2,
-                    color: 'red'
+                    color: 'red',
+                    label: {
+                        align: 'right',
+                        textAlign: 'left',
+                        text: 'label'
+                    }
+                }, {
+                    value: 15000,
+                    color: 'red',
+                    label: {
+                        align: 'right',
+                        clip: true,
+                        textAlign: 'left',
+                        text: 'label'
+                    }
                 }
             ]
         },
@@ -281,6 +302,18 @@ QUnit.test('General tests', function (assert) {
         line[line.length - 1],
         'Z',
         'Border should be rendered around the shape (#5909)'
+    );
+
+    assert.ok(
+        chart.yAxis[0].plotLinesAndBands[0].label.actualWidth > 0,
+        'Plot line label should be able to render outside plot area #17888.'
+    );
+
+    assert.strictEqual(
+        chart.yAxis[0].plotLinesAndBands[1].label.actualWidth,
+        0,
+        `Plot label with clip: true should not be able to render outside plot
+        area #15777.`
     );
 
     // Radial Axes plot lines
@@ -384,9 +417,9 @@ QUnit.test('General tests', function (assert) {
 });
 
 QUnit.test(
-    "#6433 - axis.update leaves empty plotbands' groups",
+    '#6433 - axis.update leaves empty plotbands\' groups',
     function (assert) {
-        var chart = new Highcharts.chart('container', {
+        var chart = new Highcharts.Chart('container', {
             chart: {
                 width: 600
             },
@@ -538,7 +571,7 @@ QUnit.test('Plotbands clip (#2361)', function (assert) {
                     label: {
                         text:
                             'I will dissapear if you zoom in <br/>so ' +
-                            "the start of the band isn't visible"
+                            'the start of the band isn\'t visible'
                     }
                 }
             ]
@@ -752,6 +785,13 @@ QUnit.test('Dynamically added plotbands', function (assert) {
         chart.xAxis[0].plotLinesAndBands.length,
         2,
         '#14053: plotBands from before update with redraw=false should also be added'
+    );
+
+    chart.series[0].hide();
+
+    assert.ok(
+        chart.xAxis[0].plotLinesAndBands[0].svgElem.pathArray.isFlat,
+        '#15434: plotBand should be hidden series is hidden'
     );
 });
 

@@ -75,11 +75,6 @@ QUnit.test('nullInteraction', function (assert) {
                     enabled: true,
                     format: '{point.name}'
                 },
-                states: {
-                    hover: {
-                        color: '#a4edba'
-                    }
-                },
                 nullInteraction: true
             }
         ]
@@ -95,7 +90,7 @@ QUnit.test('nullInteraction', function (assert) {
 
     assert.strictEqual(
         chart.tooltip.label.attr('visibility'),
-        'visible',
+        'inherit',
         'Tooltip visible'
     );
 });

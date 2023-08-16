@@ -11,21 +11,43 @@
  * --before String Optional. The end date for the changelog, defaults to today.
  * --review        Create a review page with edit links and a list of all PRs
  *                 that are not used in the changelog.
+ * --fromCache     Re-format pulls from cache, do not load new from GitHub.
  */
-
+const https = require('https');
 const marked = require('marked');
 const prLog = require('./pr-log');
 const params = require('yargs').argv;
 const childProcess = require('child_process');
+
+const getFile = url => new Promise((resolve, reject) => {
+    https.get(url, resp => {
+        let data = '';
+
+        // A chunk of data has been received.
+        resp.on('data', chunk => {
+            data += chunk;
+        });
+
+        // The whole response has been received. Print out the result.
+        resp.on('end', () => {
+            resolve(data);
+            // console.log(JSON.parse(data).explanation);
+        });
+
+    }).on('error', err => {
+        reject(err);
+    });
+});
 
 (function () {
     'use strict';
 
     var fs = require('fs'),
         path = require('path'),
+        // eslint-disable-next-line node/no-missing-require
         tree = require('../tree.json');
 
-    /*
+    /**
      * Return a list of options so that we can auto-link option references in
      * the changelog.
      */
@@ -57,7 +79,11 @@ const childProcess = require('child_process');
      * Get the log from Git
      */
     async function getLog(callback) {
-        var log = await prLog(params.since).catch(e => console.error(e));
+        var log = await prLog(
+            params.since,
+            params.fromCache,
+            params.branches
+        ).catch(e => console.error(e));
 
         callback(log);
     }
@@ -82,14 +108,26 @@ const childProcess = require('child_process');
         return washed;
     }
 
-    function addAPILinks(str, apiFolder) {
+    function addLinks(str, apiFolder) {
         let match;
-        const reg = /`([a-zA-Z0-9\.\[\]]+)`/g;
 
-        while ((match = reg.exec(str)) !== null) {
+        // Add links to issues
+        const issueReg = /[^\[]#([0-9]+)[^\]]/g;
+        while ((match = issueReg.exec(str)) !== null) {
+            const num = match[1];
+
+            str = str.replace(
+                `#${num}`,
+                `[#${num}](https://github.com/highcharts/highcharts/issues/${num})`
+            );
+        }
+
+        // Add API Links
+        const apiReg = /`([a-zA-Z0-9\.\[\]]+)`/g;
+        while ((match = apiReg.exec(str)) !== null) {
 
             const shortKey = match[1];
-            const replacements = [];
+            let replacements = [];
 
             optionKeys.forEach(longKey => {
                 if (longKey.indexOf(shortKey) !== -1) {
@@ -99,13 +137,26 @@ const childProcess = require('child_process');
 
             // If more than one match, see if we can rule out children of
             // objects
-            /*
             if (replacements.length > 1) {
                 replacements = replacements.filter(
                     longKey => longKey.lastIndexOf(shortKey) === longKey.length - shortKey.length
                 );
+
+                // Check if it is a member on the root series options
+                if (
+                    replacements.length > 1 &&
+                    replacements.indexOf(`plotOptions.series.${shortKey}`) !== -1
+                ) {
+                    replacements = replacements.filter(longKey => {
+                        // Remove series-specific members so that we may isolate
+                        // it to plotOptions.series.shortKey
+                        const m = longKey.match(
+                            new RegExp('plotOptions\.([a-zA-Z\.]+)\.' + shortKey)
+                        );
+                        return !m || m[1] === 'series';
+                    });
+                }
             }
-            */
 
             // If more than one match, we may be dealing with ambiguous keys
             // like `formatter`, `lineWidth` etch.
@@ -133,39 +184,55 @@ const childProcess = require('child_process');
                 Highcharts: 'highcharts',
                 'Highcharts Stock': 'highstock',
                 'Highcharts Maps': 'highmaps',
-                'Highcharts Gantt': 'gantt'
+                'Highcharts Gantt': 'gantt',
+                'Highcharts Dashboards': 'dashboards'
             }[name];
 
+        log = log || [];
         log = washPRLog(name, log);
 
-        const upgradeNotes = log
-            .filter(change => typeof change.upgradeNote === 'string')
-            .map(change => addAPILinks(`- ${change.upgradeNote}`, apiFolder))
-            .join('\n');
+        const upgradeNotes = [];
+        log
+            .filter(change => Array.isArray(change.upgradeNotes))
+            .forEach(change => {
+                change.upgradeNotes.forEach(note => {
+                    upgradeNotes.push(addLinks(`- ${note}`, apiFolder));
+                });
+            });
 
         // Start the output string
         outputString = '# Changelog for ' + name + ' v' + version + ' (' + date + ')\n\n';
 
-        if (name !== 'Highcharts') {
-            outputString += `- Most changes listed under Highcharts ${products.Highcharts.nr} above also apply to ${name} ${version}.\n`;
+        if (name !== 'Highcharts Dashboards') {
+            if (name !== 'Highcharts') {
+                outputString += `- Most changes listed under Highcharts ${products.Highcharts.nr} above also apply to ${name} ${version}.\n`;
+            } else if (log.length === 0) {
+                outputString += '- No changes for the basic Highcharts package.';
+            }
         }
+
         log.forEach((change, i) => {
 
-            const desc = addAPILinks(change.description || change, apiFolder);
+            const desc = addLinks(change.description || change, apiFolder);
 
 
             // Start fixes
             if (i === log.startFixes) {
 
-                if (upgradeNotes) {
-                    outputString += `\n## Upgrade notes\n${upgradeNotes}\n`;
+                if (upgradeNotes.length) {
+                    outputString += [
+                        '',
+                        '## Upgrade notes',
+                        ...upgradeNotes,
+                        ''
+                    ].join('\n');
                 }
 
                 outputString += '\n## Bug fixes\n';
             }
 
             const edit = params.review ?
-                ` [<a href="https://github.com/highcharts/highcharts/pull/${change.number}">Edit</a>]` :
+                ` [Edit](https://github.com/highcharts/highcharts/pull/${change.number}).` :
                 '';
 
             // All items
@@ -197,11 +264,26 @@ const childProcess = require('child_process');
 
         const filename = path.join(__dirname, 'review.html');
 
-        fs.writeFileSync(
-            filename,
-            marked(md),
-            'utf8'
-        );
+        const html = `<html>
+        <head>
+            <title>Changelog Review</title>
+            <style>
+            * {
+                font-family: sans-serif
+            }
+            code {
+                font-family: monospace;
+                color: green;
+            }
+            </style>
+        </head>
+        <body>
+        ${marked.parse(md)}
+        </body>
+        </html>`;
+
+
+        fs.writeFileSync(filename, html, 'utf8');
 
         console.log(`Review: ${filename}`);
     }
@@ -217,48 +299,72 @@ const childProcess = require('child_process');
         const d = new Date();
         const review = [];
 
-        // Load the current products and versions, and create one log each
-        fs.readFile(
-            path.join(__dirname, '/../build/dist/products.js'),
-            'utf8',
-            function (err, products) {
-                var name;
-
-                if (err) {
-                    throw err;
-                }
-
-                if (products) {
-                    products = products.replace('var products = ', '');
-                    products = JSON.parse(products);
-                }
-
-                for (name in products) {
-
-                    if (products.hasOwnProperty(name)) { // eslint-disable-line no-prototype-builtins
-                        const version = params.buildMetadata ? `${pack.version}+build.${getLatestGitSha()}` : pack.version;
-
-                        products[name].nr = version;
-                        products[name].date =
-                            d.getFullYear() + '-' +
-                            pad(d.getMonth() + 1, 2) + '-' +
-                            pad(d.getDate(), 2);
-
-                        review.push(buildMarkdown(
-                            name,
-                            version,
-                            products[name].date,
-                            log,
-                            products,
-                            optionKeys
-                        ));
-                    }
-                }
-
-                if (params.review) {
-                    saveReview(review.join('\n\n___\n'));
-                }
+        if (params.dashboards && params.release) {
+            const version = params.release;
+            if (!/^\d+\.\d+\.\d+(?:-\w+)?$/su.test(version)) {
+                throw new Error('No valid `--release x.x.x` provided.');
             }
-        );
+            const dashboardsName = 'Highcharts Dashboards';
+            const dashboardsProduct = {
+                'Highcharts Dashboards': {
+                    nr: version,
+                    date: d.getFullYear() + '-' +
+                pad(d.getMonth() + 1, 2) + '-' +
+                pad(d.getDate(), 2)
+                }
+            };
+
+
+            review.push(buildMarkdown(
+                dashboardsName,
+                version,
+                dashboardsProduct[dashboardsName].date,
+                log,
+                void 0,
+                optionKeys
+            ));
+            if (params.review) {
+                saveReview(review.join('\n\n___\n'));
+            }
+        } else {
+            // Load the current products and versions, and create one log each
+            getFile('https://code.highcharts.com/products.js')
+                .then(products => {
+                    var name;
+
+                    if (products) {
+                        products = products.replace('var products = ', '');
+                        products = JSON.parse(products);
+
+                        for (name in products) {
+
+                            if (products.hasOwnProperty(name)) { // eslint-disable-line no-prototype-builtins
+                                const version = params.buildMetadata ? `${pack.version}+build.${getLatestGitSha()}` : pack.version;
+
+                                products[name].date =
+                                    d.getFullYear() + '-' +
+                                    pad(d.getMonth() + 1, 2) + '-' +
+                                    pad(d.getDate(), 2);
+
+                                review.push(buildMarkdown(
+                                    name,
+                                    products[name].nr || version,
+                                    products[name].date,
+                                    log,
+                                    products,
+                                    optionKeys
+                                ));
+                            }
+                        }
+                    }
+
+                    if (params.review) {
+                        saveReview(review.join('\n\n___\n'));
+                    }
+                })
+                .catch(err => {
+                    throw err;
+                });
+        }
     });
 }());

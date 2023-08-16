@@ -18,14 +18,14 @@
 
 import type { AlignValue } from '../../Core/Renderer/AlignObject';
 import type AnimationOptions from '../../Core/Animation/AnimationOptions';
+import type CorePositionObject from '../../Core/Renderer/PositionObject';
 import type PieDataLabelOptions from './PieDataLabelOptions';
 import type PiePointOptions from './PiePointOptions';
-import type PiePositionObject from './PiePositionObject';
 import type PieSeries from './PieSeries';
-import type PositionObject from '../../Core/Renderer/PositionObject';
 import type SVGAttributes from '../../Core/Renderer/SVG/SVGAttributes';
 import type SVGElement from '../../Core/Renderer/SVG/SVGElement';
 import type SVGPath from '../../Core/Renderer/SVG/SVGPath';
+
 import A from '../../Core/Animation/AnimationUtilities.js';
 const { setAnimation } = A;
 import Point from '../../Core/Series/Point.js';
@@ -79,8 +79,6 @@ class PiePoint extends Point {
 
     public series: PieSeries = void 0 as any;
 
-    public shadowGroup?: SVGElement;
-
     public sliced?: boolean;
 
     public slicedTranslation?: PiePoint.TranslationAttributes;
@@ -101,10 +99,11 @@ class PiePoint extends Point {
      * @private
      */
     public getConnectorPath(): void {
-        var labelPosition = this.labelPosition,
+        const labelPosition = this.labelPosition,
             options = this.series.options.dataLabels,
-            connectorShape = (options as any).connectorShape,
             predefinedShapes = this.connectorShapes;
+
+        let connectorShape = (options as any).connectorShape;
 
         // find out whether to use the predefined shape
         if ((predefinedShapes as any)[connectorShape]) {
@@ -113,8 +112,8 @@ class PiePoint extends Point {
 
         return connectorShape.call(this, {
             // pass simplified label position object for user's convenience
-            x: (labelPosition as any).final.x,
-            y: (labelPosition as any).final.y,
+            x: (labelPosition as any).computed.x,
+            y: (labelPosition as any).computed.y,
             alignment: (labelPosition as any).alignment
         }, (labelPosition as any).connectorPosition, options);
     }
@@ -133,7 +132,7 @@ class PiePoint extends Point {
      * @private
      */
     public haloPath(size: number): SVGPath {
-        var shapeArgs = this.shapeArgs;
+        const shapeArgs = this.shapeArgs;
 
         return this.sliced || !this.visible ?
             [] :
@@ -146,7 +145,8 @@ class PiePoint extends Point {
                 // through between the halo and the slice (#7495).
                     innerR: (shapeArgs as any).r - 1,
                     start: (shapeArgs as any).start,
-                    end: (shapeArgs as any).end
+                    end: (shapeArgs as any).end,
+                    borderRadius: (shapeArgs as any).borderRadius
                 }
             );
     }
@@ -156,24 +156,18 @@ class PiePoint extends Point {
      * @private
      */
     public init(): PiePoint {
+        super.init.apply(this, arguments as any);
 
-        Point.prototype.init.apply(this, arguments as any);
-
-        var point = this,
-            toggleSlice;
-
-        point.name = pick(point.name, 'Slice');
+        this.name = pick(this.name, 'Slice');
 
         // add event listener for select
-        toggleSlice = function (
-            e: (AnyRecord|Event)
-        ): void {
-            point.slice(e.type === 'select');
+        const toggleSlice = (e: (AnyRecord|Event)): void => {
+            this.slice(e.type === 'select');
         };
-        addEvent(point, 'select', toggleSlice);
-        addEvent(point, 'unselect', toggleSlice);
+        addEvent(this, 'select', toggleSlice);
+        addEvent(this, 'unselect', toggleSlice);
 
-        return point;
+        return this;
     }
 
     /**
@@ -185,51 +179,57 @@ class PiePoint extends Point {
     }
 
     /**
-     * Toggle the visibility of the pie slice.
-     * @private
+     * Toggle the visibility of a pie slice or other data point. Note that this
+     * method is available only for some series, like pie, treemap and sunburst.
      *
-     * @param {boolean} vis
-     * Whether to show the slice or not. If undefined, the visibility is
-     * toggled.
+     * @function Highcharts.Point#setVisible
+     *
+     * @param {boolean} [vis]
+     * True to show the pie slice or other data point, false to hide. If
+     * undefined, the visibility is toggled.
+     *
+     * @param {boolean} [redraw] Whether to redraw the chart after the point is
+     * altered. If doing more operations on the chart, it is a good idea to set
+     * redraw to false and call {@link Chart#redraw|chart.redraw()} after.
+     *
      */
     public setVisible(
         vis: boolean,
         redraw?: boolean
     ): void {
-        var point = this,
-            series = point.series,
+        const series = this.series,
             chart = series.chart,
             ignoreHiddenPoint = series.options.ignoreHiddenPoint;
 
         redraw = pick(redraw, ignoreHiddenPoint);
 
-        if (vis !== point.visible) {
+        if (vis !== this.visible) {
 
             // If called without an argument, toggle visibility
-            point.visible = point.options.visible = vis =
-                typeof vis === 'undefined' ? !point.visible : vis;
+            this.visible = this.options.visible = vis =
+                typeof vis === 'undefined' ? !this.visible : vis;
             // update userOptions.data
-            (series.options.data as any)[series.data.indexOf(point)] =
-                point.options;
+            (series.options.data as any)[series.data.indexOf(this)] =
+                this.options;
 
             // Show and hide associated elements. This is performed
             // regardless of redraw or not, because chart.redraw only
             // handles full series.
-            ['graphic', 'dataLabel', 'connector', 'shadowGroup'].forEach(
-                function (key: string): void {
-                    if ((point as any)[key]) {
-                        (point as any)[key][vis ? 'show' : 'hide'](vis);
+            ['graphic', 'dataLabel', 'connector'].forEach(
+                (key: string): void => {
+                    if ((this as any)[key]) {
+                        (this as any)[key][vis ? 'show' : 'hide'](vis);
                     }
                 }
             );
 
-            if (point.legendItem) {
-                chart.legend.colorizeItem(point, vis);
+            if (this.legendItem) {
+                chart.legend.colorizeItem(this, vis);
             }
 
             // #4170, hide halo after hiding point
-            if (!vis && point.state === 'hover') {
-                point.setState('');
+            if (!vis && this.state === 'hover') {
+                this.setState('');
             }
 
             // Handle ignore hidden slices
@@ -250,10 +250,10 @@ class PiePoint extends Point {
      * @param {boolean} sliced
      * When undefined, the slice state is toggled.
      *
-     * @param {boolean} redraw
+     * @param {boolean} [redraw]
      * Whether to redraw the chart. True by default.
      *
-     * @param {boolean|Partial<Highcharts.AnimationOptionsObject>}
+     * @param {boolean|Partial<Highcharts.AnimationOptionsObject>} [animation]
      * Animation options.
      */
     public slice(
@@ -261,8 +261,7 @@ class PiePoint extends Point {
         redraw?: boolean,
         animation?: (boolean|Partial<AnimationOptions>)
     ): void {
-        var point = this,
-            series = point.series,
+        const series = this.series,
             chart = series.chart;
 
         setAnimation(animation, chart);
@@ -277,25 +276,21 @@ class PiePoint extends Point {
          * @type {boolean|undefined}
          */
         // if called without an argument, toggle
-        point.sliced = point.options.sliced = sliced =
-            defined(sliced) ? sliced : !point.sliced;
+        this.sliced = this.options.sliced = sliced =
+            defined(sliced) ? sliced : !this.sliced;
         // update userOptions.data
-        (series.options.data as any)[series.data.indexOf(point)] =
-            point.options;
+        (series.options.data as any)[series.data.indexOf(this)] =
+            this.options;
 
-        if (point.graphic) {
-            point.graphic.animate(this.getTranslate());
-        }
-
-        if (point.shadowGroup) {
-            point.shadowGroup.animate(this.getTranslate());
+        if (this.graphic) {
+            this.graphic.animate(this.getTranslate());
         }
     }
 }
 
 /* *
  *
- *  Prototype Properties
+ *  Class Prototype
  *
  * */
 
@@ -306,11 +301,11 @@ extend(PiePoint.prototype, {
     connectorShapes: {
         // only one available before v7.0.0
         fixedOffset: function (
-            labelPosition: PiePositionObject,
+            labelPosition: PiePoint.PositionObject,
             connectorPosition: PiePoint.LabelConnectorPositionObject,
             options: PieDataLabelOptions
         ): SVGPath {
-            var breakAt = connectorPosition.breakAt,
+            const breakAt = connectorPosition.breakAt,
                 touchingSliceAt = connectorPosition.touchingSliceAt,
                 lineSegment = options.softConnector ? [
                     'C', // soft break
@@ -338,10 +333,10 @@ extend(PiePoint.prototype, {
         },
 
         straight: function (
-            labelPosition: PiePositionObject,
+            labelPosition: PiePoint.PositionObject,
             connectorPosition: PiePoint.LabelConnectorPositionObject
         ): SVGPath {
-            var touchingSliceAt = connectorPosition.touchingSliceAt;
+            const touchingSliceAt = connectorPosition.touchingSliceAt;
 
             // direct line to the slice
             return [
@@ -352,48 +347,55 @@ extend(PiePoint.prototype, {
 
         crookedLine: function (
             this: PiePoint,
-            labelPosition: PiePositionObject,
+            labelPosition: PiePoint.PositionObject,
             connectorPosition: PiePoint.LabelConnectorPositionObject,
             options: PieDataLabelOptions
         ): SVGPath {
-
-            var touchingSliceAt = connectorPosition.touchingSliceAt,
-                series = this.series,
-                pieCenterX = series.center[0],
+            const { breakAt, touchingSliceAt } = connectorPosition,
+                { series } = this,
+                [cx, cy, diameter] = series.center,
+                r = diameter / 2,
                 plotWidth = series.chart.plotWidth,
                 plotLeft = series.chart.plotLeft,
-                alignment = labelPosition.alignment,
-                radius = (this.shapeArgs as any).r,
-                crookDistance = relativeLength( // % to fraction
-                    options.crookDistance as any, 1
-                ),
-                crookX = alignment === 'left' ?
-                    pieCenterX + radius + (plotWidth + plotLeft -
-                    pieCenterX - radius) * (1 - crookDistance) :
-                    plotLeft + (pieCenterX - radius) * crookDistance,
-                segmentWithCrook: SVGPath.LineTo = [
-                    'L',
-                    crookX,
-                    labelPosition.y
-                ],
-                useCrook = true;
+                leftAligned = labelPosition.alignment === 'left',
+                { x, y } = labelPosition;
 
-            // crookedLine formula doesn't make sense if the path overlaps
+            let crookX = breakAt.x;
+            if (options.crookDistance) {
+                const crookDistance = relativeLength( // % to fraction
+                    options.crookDistance, 1
+                );
+                crookX = leftAligned ?
+                    cx +
+                    r +
+                    (plotWidth + plotLeft - cx - r) * (1 - crookDistance) :
+                    plotLeft + (cx - r) * crookDistance;
+
+            // When the crookDistance option is undefined, make the bend in the
+            // intersection between the radial line in the middle of the slice,
+            // and the extension of the label position.
+            } else {
+                crookX = cx + (cy - y) * Math.tan(
+                    (this.angle || 0) - Math.PI / 2
+                );
+            }
+
+            const path: SVGPath = [['M', x, y]];
+
+            // The crookedLine formula doesn't make sense if the path overlaps
             // the label - use straight line instead in that case
-            if (alignment === 'left' ?
-                (crookX > labelPosition.x || crookX < touchingSliceAt.x) :
-                (crookX < labelPosition.x || crookX > touchingSliceAt.x)) {
-                useCrook = false;
+            if (
+                leftAligned ?
+                    (crookX <= x && crookX >= breakAt.x) :
+                    (crookX >= x && crookX <= breakAt.x)
+            ) {
+                path.push(['L', crookX, y]);
             }
 
-            // assemble the path
-            const path = [
-                ['M', labelPosition.x, labelPosition.y]
-            ] as SVGPath;
-            if (useCrook) {
-                path.push(segmentWithCrook);
-            }
-            path.push(['L', touchingSliceAt.x, touchingSliceAt.y]);
+            path.push(
+                ['L', breakAt.x, breakAt.y],
+                ['L', touchingSliceAt.x, touchingSliceAt.y]
+            );
             return path;
         }
     }
@@ -401,28 +403,43 @@ extend(PiePoint.prototype, {
 
 /* *
  *
- *  Class Declarations
+ *  Class Namespace
  *
  * */
 
 namespace PiePoint {
+
+    /* *
+     *
+     *  Declarations
+     *
+     * */
+
     export interface ConnectorShapeFunction {
         (...args: Array<any>): SVGPath;
     }
+
     export interface LabelConnectorPositionObject {
-        breakAt: PositionObject;
-        touchingSliceAt: PositionObject;
+        breakAt: CorePositionObject;
+        touchingSliceAt: CorePositionObject;
     }
+
     export interface LabelPositionObject {
         alignment: AlignValue;
         connectorPosition: LabelConnectorPositionObject;
-        'final': Record<string, undefined>;
-        natural: PositionObject;
+        computed: Record<string, undefined>;
+        natural: CorePositionObject;
     }
+
+    export interface PositionObject extends CorePositionObject {
+        alignment: AlignValue;
+    }
+
     export interface TranslationAttributes extends SVGAttributes {
         translateX: number;
         translateY: number;
     }
+
 }
 
 /* *

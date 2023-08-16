@@ -4,6 +4,25 @@ Highcharts.ganttChart('container', {
         text: 'Left Axis as Table'
     },
 
+    lang: {
+        accessibility: {
+            axis: {
+                xAxisDescriptionPlural: 'The chart has a two-part X axis showing time in both week numbers and days.',
+                yAxisDescriptionSingular: 'The chart has a tabular Y axis showing a data table row for each point.'
+            }
+        }
+    },
+
+    accessibility: {
+        point: {
+            descriptionFormat: '{#if milestone}' +
+                '{name}, milestone for {yCategory} at {x:%Y-%m-%d}.' +
+                '{else}' +
+                '{name}, assigned to {yCategory} from {x:%Y-%m-%d} to {x2:%Y-%m-%d}.' +
+                '{/if}'
+        }
+    },
+
     xAxis: {
         tickPixelInterval: 70
     },
@@ -33,12 +52,7 @@ Highcharts.ganttChart('container', {
                     text: 'Est. days'
                 },
                 labels: {
-                    formatter: function () {
-                        var point = this.point,
-                            days = (1000 * 60 * 60 * 24),
-                            number = (point.x2 - point.x) / days;
-                        return Math.round(number * 100) / 100;
-                    }
+                    format: '{(divide (subtract point.x2 point.x) 86400000):.2f}'
                 }
             }, {
                 labels: {
@@ -82,6 +96,7 @@ Highcharts.ganttChart('container', {
             end: Date.UTC(2017, 10, 25, 16),
             name: 'Prototype done',
             assignee: 'Richards',
+            milestone: true,
             y: 2
         }, {
             start: Date.UTC(2017, 10, 27, 8),
