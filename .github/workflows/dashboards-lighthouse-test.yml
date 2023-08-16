@@ -58,7 +58,7 @@ jobs:
           install: false
 
       - name: Rename report
-        run: mv tmp/lighthouse.json tmp/lighthouse-master.json
+        run: mv ./tmp/lighthouse.json tmp/lighthouse-master.json
 
       - name: Store artifacts
         uses: actions/upload-artifact@v3
