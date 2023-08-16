@@ -446,6 +446,21 @@ const seriesDefaults: PlotOptionsOf<Series> = {
      */
 
     /**
+     * Highlight only the hovered point and fade the remaining points.
+     *
+     * Scatter-type series require enabling the 'inactive' marker state and
+     * adjusting opacity. Note that this approach could affect performance
+     * with large datasets.
+     *
+     * @sample {highcharts} highcharts/plotoptions/series-inactiveotherpoints-enabled/
+     *         Chart with inactiveOtherPoints option enabled.
+     *
+     * @type      {boolean}
+     * @default   false
+     * @apioption plotOptions.series.inactiveOtherPoints
+     */
+
+    /**
      * An array specifying which option maps to which key in the data point
      * array. This makes it convenient to work with unstructured data arrays
      * from different sources.

@@ -39,7 +39,7 @@ const {
 
 /* *
  *
- *  Declarations
+ *  Declarationsssssss
  *
  * */
 
@@ -125,7 +125,7 @@ class Time {
 
     /* *
      *
-     *  Constructors
+     *  Constructorssss
      *
      * */
 
