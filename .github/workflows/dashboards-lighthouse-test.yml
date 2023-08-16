@@ -38,6 +38,7 @@ jobs:
         uses: cypress-io/github-action@v5
         with:
           runTests: false
+          browser: chrome
 
       - name: Build Highcharts
         run: npx gulp scripts
@@ -49,6 +50,7 @@ jobs:
       - name: Run cypress via action
         uses: cypress-io/github-action@v5
         with:
+          browser: chrome
           start: npx cross-env NODE_PATH=${GITHUB_WORKSPACE}/node_modules node node_modules/@highcharts/highcharts-utils/server --localOnly
           wait-on: 'http://localhost:3031/dashboards.js'
           env: type=base
@@ -95,6 +97,7 @@ jobs:
         uses: cypress-io/github-action@v5
         with:
           runTests: false
+          browser: chrome
 
       - name: Install utils
         run: npm i github:highcharts/highcharts-utils
@@ -112,6 +115,7 @@ jobs:
           env: type=actual
           config: specPattern=**/performance/*.cy.js
           install: false
+          browser: chrome
 
       - name: Comment on PR
         uses: actions/github-script@v6
