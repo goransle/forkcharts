@@ -165,7 +165,9 @@ class SVGElement implements SVGElementLike {
     public firstLineMetrics?: FontMetricsObject;
     public handleZ?: boolean;
     public hasBoxWidthChanged?: boolean;
-    // @todo public height?: number;
+    public height?: number;
+    public imgwidth?: number;
+    public imgheight?: number;
     public inverted: undefined;
     public matrix?: Array<number>;
     public onEvents: Record<string, Function> = {};
@@ -194,10 +196,10 @@ class SVGElement implements SVGElementLike {
     // @todo public textWidth?: number;
     public textPath?: TextPathObject;
     // @todo public textPxLength?: number;
-    // @todo public translateX?: number;
-    // @todo public translateY?: number;
+    public translateX?: number;
+    public translateY?: number;
     public visibility?: 'hidden'|'inherit'|'visible';
-    // @todo public width?: number;
+    public width?: number;
     public x?: number;
     public y?: number;
     // @todo public zIndex?: number;
@@ -1226,6 +1228,8 @@ class SVGElement implements SVGElementLike {
             wrapper.clipPath = clipPath.destroy();
         }
 
+        wrapper.connector = wrapper.connector?.destroy();
+
         // Destroy stops in case this is a gradient object @todo old code?
         if (wrapper.stops) {
             for (i = 0; i < wrapper.stops.length; i++) {
@@ -1336,6 +1340,21 @@ class SVGElement implements SVGElementLike {
         }
     }
 
+    /**
+     * @private
+     * @function Highcharts.SVGElement#hrefSetter
+     * @param {Highcharts.ColorType} value
+     * @param {string} key
+     * @param {Highcharts.SVGDOMElement} element
+     */
+    public hrefSetter(
+        value: string,
+        key: string,
+        element: SVGDOMElement
+    ): void {
+        // Namespace is needed for offline export, #19106
+        element.setAttributeNS('http://www.w3.org/1999/xlink', key, value);
+    }
 
     /**
      * Get the bounding box (width, height, x and y) for the element. Generally

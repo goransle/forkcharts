@@ -35,13 +35,8 @@ import Color from '../../Core/Color/Color.js';
 const { parse: color } = Color;
 import SeriesRegistry from '../../Core/Series/SeriesRegistry.js';
 const {
-    series: {
-        prototype: seriesProto
-    },
-    seriesTypes: {
-        column: ColumnSeries
-    }
-} = SeriesRegistry;
+    column: ColumnSeries
+} = SeriesRegistry.seriesTypes;
 import U from '../../Core/Utilities.js';
 const {
     addEvent,
@@ -207,8 +202,7 @@ class XRangeSeries extends ColumnSeries {
     ): SeriesClass.CropDataObject {
 
         // Replace xData with x2Data to find the appropriate cropStart
-        const crop = seriesProto.cropData.call(
-            this,
+        const crop = super.cropData(
             this.x2Data as any,
             yData,
             min,
@@ -285,7 +279,9 @@ class XRangeSeries extends ColumnSeries {
             oldColWidth = (point.shapeArgs && point.shapeArgs.width || 0) / 2,
             seriesXOffset = this.pointXOffset = metrics.offset,
             posX = pick(point.x2, (point.x as any) + (point.len || 0)),
-            borderRadius = options.borderRadius;
+            borderRadius = options.borderRadius,
+            plotTop = this.chart.plotTop,
+            plotLeft = this.chart.plotLeft;
 
 
         let plotX = point.plotX,
@@ -413,22 +409,22 @@ class XRangeSeries extends ColumnSeries {
         );
 
         // Centering tooltip position (#14147)
-        if (!inverted) {
+        if (inverted) {
+            tooltipPos[xIndex] += shapeArgs.width / 2;
+        } else {
             tooltipPos[xIndex] = clamp(
                 tooltipPos[xIndex] +
                 (xAxis.reversed ? -1 : 0) * shapeArgs.width,
-                0,
-                xAxis.len - 1
+                xAxis.left - plotLeft,
+                xAxis.left + xAxis.len - plotLeft - 1
             );
-        } else {
-            tooltipPos[xIndex] += shapeArgs.width / 2;
         }
         tooltipPos[yIndex] = clamp(
             tooltipPos[yIndex] + (
                 (inverted ? -1 : 1) * tooltipYOffset
             ),
-            0,
-            yAxis.len - 1
+            yAxis.top - plotTop,
+            yAxis.top + yAxis.len - plotTop - 1
         );
 
         // Add a partShapeArgs to the point, based on the shapeArgs property
@@ -498,7 +494,6 @@ class XRangeSeries extends ColumnSeries {
             shapeArgs = point.shapeArgs,
             partShapeArgs = point.partShapeArgs,
             clipRectArgs = point.clipRectArgs,
-            cutOff = seriesOpts.stacking && !seriesOpts.borderRadius,
             pointState = point.state,
             stateOpts: SeriesStateHoverOptions = (
                 (seriesOpts.states as any)[pointState || 'normal'] ||
@@ -664,8 +659,6 @@ class XRangeSeries extends ColumnSeries {
     }
     //*/
 
-    /* eslint-enable valid-jsdoc */
-
 }
 
 /* *
@@ -677,23 +670,21 @@ class XRangeSeries extends ColumnSeries {
 interface XRangeSeries {
     pointClass: typeof XRangePoint;
     columnMetrics: ColumnMetricsObject;
-    cropShoulder: number;
     getExtremesFromAll: boolean;
     parallelArrays: Array<string>;
     requireSorting: boolean;
     type: string;
     x2Data: Array<(number|undefined)>;
-    animate: typeof seriesProto.animate;
 }
 
 extend(XRangeSeries.prototype, {
     pointClass: XRangePoint,
-    cropShoulder: 1,
+    pointArrayMap: ['x2', 'y'],
     getExtremesFromAll: true,
     parallelArrays: ['x', 'x2', 'y'],
     requireSorting: false,
     type: 'xrange',
-    animate: seriesProto.animate,
+    animate: SeriesRegistry.series.prototype.animate,
     autoIncrement: noop,
     buildKDTree: noop
 });

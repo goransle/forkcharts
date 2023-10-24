@@ -21,7 +21,7 @@
 
 import type DataCursor from '../../Data/DataCursor';
 import type Sync from '../Components/Sync/Sync';
-import type KPIComponent from '../Components/KPIComponent';
+import type KPIComponent from './KPIComponent';
 
 import U from '../../Core/Utilities.js';
 const { defined } = U;
@@ -50,7 +50,8 @@ const configs: {
                         cursor.type === 'position' &&
                         typeof cursor?.row === 'number' &&
                         defined(cursor.column) &&
-                        this.connector
+                        this.connector &&
+                        !defined(this.options.value)
                     ) {
                         const value =
                             this.connector.table.modified.getCellAsString(

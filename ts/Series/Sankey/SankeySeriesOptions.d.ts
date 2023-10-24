@@ -53,13 +53,13 @@ export interface SankeySeriesNodeOptions {
     offset?: (number|string);
 }
 
-
 export interface SankeySeriesOptions extends ColumnSeriesOptions, NodesComposition.SeriesCompositionOptions {
     curveFactor?: number;
     dataLabels?: SankeyDataLabelOptions;
     height?: number;
     inactiveOtherPoints?: boolean;
     levels?: Array<SankeySeriesLevelOptions>;
+    linkColorMode?: ('from'|'gradient'|'to');
     linkOpacity?: number;
     mass?: undefined;
     minLinkWidth?: number;
@@ -76,5 +76,11 @@ export interface SankeySeriesTooltipOptions extends Partial<TooltipOptions> {
     nodeFormat?: string;
     nodeFormatter?: Templating.FormatterCallback<SankeyPoint>;
 }
+
+/* *
+ *
+ *  Default Export
+ *
+ * */
 
 export default SankeySeriesOptions;

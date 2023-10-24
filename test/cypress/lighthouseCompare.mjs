@@ -1,94 +1,157 @@
+// @ts-check
 import process from 'node:process';
-import {join} from 'node:path';
+import { join } from 'node:path';
+import { existsSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
 import yargs from 'yargs';
 
 const { argv, cwd } = process;
 
-const args = yargs(argv).argv;
+const { reportsDir } = await yargs(argv).argv;
 
-
-const outPutColums = {
-    reference: {},
-    proposed: {}
+if (!reportsDir || typeof reportsDir !== 'string') {
+    throw new Error('Missing or incorrect reportsDir argument');
 }
 
 const compareMetrics = [
-    "first-contentful-paint",
-    "first-meaningful-paint",
-    "dom-size"
+    'categories.performance',
+    'first-contentful-paint',
+    'first-meaningful-paint',
+    'dom-size',
 ];
 
-const valueTypes = [
-    "score",
-    "numericValue",
-    "numericUnit"
-];
+const valueTypes = ['score', 'numericValue', 'numericUnit'];
 
-async function loadJSON(path){
-    const { default: jsonData } = await import(
-        join(cwd(), path),
-        { assert: { type: 'json' }}
-    ).catch(()=> ({default : null}))
+/**
+ * @param {string} path
+ */
+async function loadJSON(path) {
+    const { default: jsonData } = await import(join(cwd(), path), {
+        assert: { type: 'json' },
+    }).catch(() => ({ default: null }));
 
     return jsonData;
 }
 
-for (const [argName, argValue] of Object.entries(args)){
-    if( outPutColums[argName] ){
-        const reportData = await loadJSON(argValue);
-        if(reportData){
-            compareMetrics.forEach(metric => {
-                if (reportData.audits[metric]) {
-                    Object.keys(reportData.audits[metric])
-                        .filter(key => valueTypes.includes(key))
-                        .forEach(key => {
-                            if(!outPutColums[argName][metric]){
-                                outPutColums[argName][metric] = {}
+/**
+ * @param {Record<'base'| 'actual', {}>} outPutColumns
+ * @param {string|undefined} reportName
+ */
+function printReport(outPutColumns, reportName = undefined) {
+    if (reportName) {
+        console.log(`### ${reportName}`);
+    }
+
+    const tableHeader =
+        '|   | Reference | Proposed | Diff |' +
+        '\n| :---- | ------ | ----- | ----- |\n';
+
+    const lineFmt = ({ audit, measure, valueReference, valueProposed }) =>
+        measure
+            ? `| ${audit} – ${measure} | ${valueReference} | ${valueProposed} | ${
+                  typeof valueReference === 'number' &&
+                  typeof valueProposed === 'number'
+                      ? (valueProposed - valueReference).toFixed(2)
+                      : ''
+              } |`
+            : '';
+
+    /**
+     * @param {string} audit
+     */
+    const printTableLines = (audit) => {
+        let lines = [];
+
+        const base = outPutColumns.base[audit];
+        const actual = outPutColumns.actual[audit];
+
+        lines.push(
+            lineFmt({
+                audit,
+                measure: 'score',
+                valueReference: base ? base.score : '',
+                valueProposed: actual.score,
+            }),
+        );
+
+        if (actual.numericUnit) {
+            lines.push(
+                lineFmt({
+                    audit,
+                    measure: actual.numericUnit + 's',
+                    valueReference: base
+                        ? parseFloat(base.numericValue?.toFixed(2))
+                        : '',
+                    valueProposed: parseFloat(
+                        outPutColumns.actual[audit].numericValue?.toFixed(2),
+                    ),
+                }),
+            );
+        }
+
+        return lines.join('\n');
+    };
+
+    const table =
+        tableHeader +
+        Object.keys(outPutColumns.actual).map(printTableLines).join('\n');
+
+    console.log(table);
+}
+
+// Loop over the actuals, as we are most interested in changes
+const actualFiles = await readdir(join(reportsDir, 'actual'));
+const reportFiles = actualFiles.map((file) => {
+    return {
+        actual: file,
+        base: existsSync(join(reportsDir, 'base', file)) ? file : undefined,
+    };
+});
+
+for (const report of reportFiles) {
+    const outPutColumns = {
+        base: {},
+        actual: {},
+    };
+
+    for (const [context, fileName] of Object.entries(report)) {
+        if (fileName) {
+            const reportData = await loadJSON(
+                join(reportsDir, context, fileName),
+            );
+
+            if (reportData) {
+                compareMetrics.forEach((metric) => {
+                    if (metric.startsWith('categories.')) {
+                        const category = metric.replace('categories.', '');
+                        const categoryData = reportData.categories[category];
+                        if (categoryData) {
+                            if (!outPutColumns[context][category]) {
+                                outPutColumns[context][category] = {};
                             }
 
-                            outPutColums[argName][metric][key] = reportData.audits[metric][key]
+                            outPutColumns[context][category].score =
+                                categoryData.score;
+                        }
+                        return;
+                    }
 
-                        })
-                }
-            });
+                    if (reportData.audits[metric]) {
+                        Object.keys(reportData.audits[metric])
+                            .filter((key) => valueTypes.includes(key))
+                            .forEach((key) => {
+                                if (!outPutColumns[context][metric]) {
+                                    outPutColumns[context][metric] = {};
+                                }
+
+                                outPutColumns[context][metric][key] =
+                                    reportData.audits[metric][key];
+                            });
+                    }
+                });
+            }
         }
     }
+
+    printReport(outPutColumns, report.actual);
 }
-
-const tableHeader = '|   | Reference | Proposed | Diff |' + '\n| :---- | ------ | ----- | ----- |\n';
-
-const lineFmt = ({
-    audit,
-    measure,
-    valueReference,
-    valueProposed
-}) =>
-    `| ${audit} – ${measure} | ${valueReference} | ${valueProposed} | ${typeof valueReference === 'number' && typeof valueProposed === 'number' ? (valueProposed - valueReference).toFixed(2) : 'NaN'} |`;
-
-function printTableLines(audit){
-    let lines = [];
-
-    const hasReference = Boolean(outPutColums.reference[audit]);
-
-    lines.push(lineFmt({
-        audit,
-        measure: 'score',
-        valueReference: hasReference ? outPutColums.reference[audit].score: NaN,
-        valueProposed: outPutColums.proposed[audit].score
-    }));
-
-    lines.push(lineFmt({
-        audit,
-        measure: hasReference ? outPutColums.reference[audit].numericUnit + 's' : '',
-        valueReference: hasReference ? parseFloat(outPutColums.reference[audit].numericValue.toFixed(2)): NaN,
-        valueProposed: parseFloat(outPutColums.proposed[audit].numericValue.toFixed(2))
-    }));
-
-    return lines.join('\n')
-}
-
-const table = tableHeader +
-    Object.keys(outPutColums.proposed).map(printTableLines).join('\n');
-
-console.log(table)
-
